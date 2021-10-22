@@ -19,7 +19,7 @@ local ADDON_NAME_LONG = 	addonTable.ADDON_NAME_LONG
 local ADDON_NAME_SHORT = 	addonTable.ADDON_NAME_SHORT
 local ADDON_VERSION = 		addonTable.ADDON_VERSION
 
-local debug_flag = false
+local debug_flag = true
 local debug_allInstances = true
 -- local ch_frame_3 = getglobal("ChatFrame".."3")
 -- local ch_frame_6 = getglobal("ChatFrame".."6")
@@ -126,7 +126,7 @@ function addon:setAddonActive()
 		addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- Register to fetch the Raid ID
         RequestRaidInfo()
 		
-		self:ScheduleTimer("UnregisterEvent", 1, "UPDATE_INSTANCE_INFO") -- unregister event after 2 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
+		-- self:ScheduleTimer("UnregisterEvent", 1, "UPDATE_INSTANCE_INFO") -- unregister event after 2 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
 		
 	else
 	-- IF ADDON INACTIVE
@@ -257,6 +257,7 @@ function addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
 			Icon:SetImageSize(30,30)
 			
 			local Label = AceGUI:Create("Label")
+			Label:SetFullWidth(true)
 			Label:SetText(ref_table["timestamp"].." ("..ref_table["ID"]..")\n"..ref_table["trigger-text"])
 			
 			InlineGroup_header:SetLayout("Flow")
@@ -287,6 +288,7 @@ function addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
 			local ref_table = db_SI[id_separat[1]];
 			
 			local Label = AceGUI:Create("Label")
+			Label:SetFullWidth(true)
 			Label:SetText(addon:formatRaidWeekSummary(ref_table, id_separat[1]))
 			selectTree:AddChild(Label)
 			
@@ -1257,6 +1259,10 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 	local hasScreen = false
 	local hasEntry = false
 	
+	if (reason_raw == L["BOSSNAME_Steelbreaker"]) or (reason_raw == L["BOSSNAME_Steelbreaker"]) or (reason_raw == L["BOSSNAME_Steelbreaker"]) then
+		reason_raw = L["BOSSNAME_AssemblyIron"]
+	end
+	
 	-- Create Screenshot: IF everyTrigger OR selectTrigger AND is boss in selected list?
 	if (db_char.chooseCreateScreenOn==3) or ( (db_char.chooseCreateScreenOn==2) and (db_options.screen_trigger[reason_raw]) ) then
 		self:ScheduleTimer(Screenshot, 0.5)
@@ -1274,6 +1280,8 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 	else
 		-- DPrint("Create Entry","false","|","db_char.chooseCreateEntryOn",db_char.chooseCreateEntryOn,reason_raw)
 	end
+	-- DPrint("hasScreen",hasScreen,",","hasEntry",hasEntry)
+	-- DPrint("trigger_type",trigger_type, "reason_raw",reason_raw, "reason_detail",reason_detail)
 	
 	if (hasScreen) then
 		-- chat output: IF chat OR chat&screen

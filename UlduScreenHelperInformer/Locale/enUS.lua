@@ -6,7 +6,7 @@ local L = LibStub("AceLocale-3.0"):NewLocale(ADDON_NAME, "enUS", true)
 if not L then return end
 
 local SPACES = "     "
-local RAIDLIMITED = "The Addon observes triggers for Screenshots or Informer Entries only in "..addonTable.ColorList["ORANGE"].."Ulduar (25)|r."
+local RAIDLIMITED = "The Addon observes triggers for Screenshots or Informer Entries only in ".."|c"..addonTable.ColorList["ORANGE"].."Ulduar (25)|r."
 
 L["Informer Entries"] = true
 
@@ -45,7 +45,7 @@ L["Trigger"] = true
 L["Triggers"] = true
 
 L["DESC_OPTION_trigger_boss_prefix"] = "Defeat of "
-L["Fragment looting"] = addonTable.ColorList["ORANGE"].."Fragment looting".."|r"
+L["Fragment looting"] = "|c"..addonTable.ColorList["ORANGE"].."Fragment looting".."|r"
 L["DESC_OPTION_trigger_val_drop"] = "Looting of Fragment of Val'anyr"
 
 
@@ -61,13 +61,13 @@ L["Delete Raidweek"] = true
 L["DESC_noSavedRaids"] = "Currently there are no saved raids to show."
 
 -- about panel
-L["PANEL_ABOUT_text"] = addonTable.ColorList["ORANGE"].."Ulduar Screenshot Helper & Informer (USHI)|r serves to aid in attendance management in Ulduar raids. For certain triggers (boss kills or loot distribution) a Screenshot or Informer Entry can be created automatically. Informer Entries contain the attending characters and can be copied as text.".."\n\n"..RAIDLIMITED;
+L["PANEL_ABOUT_text"] = "|c"..addonTable.ColorList["ORANGE"].."Ulduar Screenshot Helper & Informer (USHI)|r serves to aid in attendance management in Ulduar raids. For certain triggers (boss kills or loot distribution) a Screenshot or Informer Entry can be created automatically. Informer Entries contain the attending characters and can be copied as text.".."\n\n"..RAIDLIMITED;
 L["PANEL_ABOUT_header_chatCommands"] = "Chat Commands"
 L["Commands"] = true
 L["Unknown Command"] = true
-L["PANEL_ABOUT_chatCommand_1"] = "["..addonTable.ColorList["COL_USHI"].."/ushi|r], ["..addonTable.ColorList["COL_USHI"].."/ushi o|r], ["..addonTable.ColorList["COL_USHI"].."/ushi options|r]:\n"..SPACES.."Opens the Settings Panel"
-L["PANEL_ABOUT_chatCommand_2"] = "["..addonTable.ColorList["COL_USHI"].."/ushi i|r], ["..addonTable.ColorList["COL_USHI"].."/ushi info|r], ["..addonTable.ColorList["COL_USHI"].."/ushi informer|r]:\n"..SPACES.."Opens the Informer Panel"
-L["PANEL_ABOUT_chatCommand_3"] = "["..addonTable.ColorList["COL_USHI"].."/ushi ?|r], ["..addonTable.ColorList["COL_USHI"].."/ushi help|r], ["..addonTable.ColorList["COL_USHI"].."/ushi about|r]:\n"..SPACES.."Opens the About Panel"
+L["PANEL_ABOUT_chatCommand_1"] = "[".."|c"..addonTable.ColorList["COL_USHI"].."/ushi|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi o|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi options|r]:\n"..SPACES.."Opens the Settings Panel"
+L["PANEL_ABOUT_chatCommand_2"] = "[".."|c"..addonTable.ColorList["COL_USHI"].."/ushi i|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi info|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi informer|r]:\n"..SPACES.."Opens the Informer Panel"
+L["PANEL_ABOUT_chatCommand_3"] = "[".."|c"..addonTable.ColorList["COL_USHI"].."/ushi ?|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi help|r], [".."|c"..addonTable.ColorList["COL_USHI"].."/ushi about|r]:\n"..SPACES.."Opens the About Panel"
 L["PANEL_ABOUT_text_2"] = (
 	"Author: Telkar (Rising Gods, 2021)".."\n"..
 	"Version: "..addonTable.ADDON_VERSION.."\n".."\n"..

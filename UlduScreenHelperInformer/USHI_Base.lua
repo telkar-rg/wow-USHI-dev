@@ -2,7 +2,7 @@
 
 addonTable.ADDON_NAME_LONG = 	"Ulduar Screenshot Helper & Informer"
 addonTable.ADDON_NAME_SHORT = 	"USHI"
-addonTable.ADDON_VERSION = 		"1.2"
+addonTable.ADDON_VERSION = 		"1.2.1"
 
 addonTable.ColorList = {
 	["COL_USHI"] =	"ff".."33ff99",
