@@ -23,26 +23,35 @@ L["DESC_OPTION_trigger_val_drop"] = "Screenshot after looting of Fragment of Val
 
 
 -- Ulduar 
-L["Ulduar"] = true
-L["Fragment of Val'anyr"] = true
+L["ITEMNAME_FragmentValanyr"] = "Fragment of Val'anyr"
 
-L["Flame Leviathan"] = true
-L["Ignis the Furnace Master"] = true
-L["Razorscale"] = true
-L["XT-002 Deconstructor"] = true
 
-L["Assembly of Iron"] = true
-L["Steelbreaker"] = true
-L["Runemaster Molgeim"] = true
-L["Stormcaller Brundir"] = true
-L["Kologarn"] = true
-L["Algalon the Observer"] = true
+L["ZONENAME_Ulduar"] = "Ulduar"
+L["ZONENAME_SubAntechamber"] = "The Antechamber"
+L["ZONENAME_SubKologarn"] = "The Shattered Walkway"
+L["ZONENAME_SubFreya"] = "The Conservatory of Life"
+L["ZONENAME_SubThorim"] = "The Clash of Thunder"
+L["ZONENAME_SubHodir"] = "The Halls of Winter"
+L["ZONENAME_SubMimiron"] = "The Spark of Imagination"
 
-L["Auriaya"] = true
-L["Freya"] = true
-L["Thorim"] = true
-L["Hodir"] = true
-L["Mimiron"] = true
 
-L["General Vezax"] = true
-L["Yogg-Saron"] = true
+L["BOSSNAME_FlameLeviathan"] = "Flame Leviathan"
+L["BOSSNAME_Ignis"] = "Ignis the Furnace Master"
+L["BOSSNAME_Razorscale"] = "Razorscale"
+L["BOSSNAME_XT002"] = "XT-002 Deconstructor"
+
+L["BOSSNAME_AssemblyIron"] = "Assembly of Iron"
+L["BOSSNAME_Steelbreaker"] = "Steelbreaker"
+L["BOSSNAME_RunemasterMolgeim"] = "Runemaster Molgeim"
+L["BOSSNAME_StormcallerBrundir"] = "Stormcaller Brundir"
+L["BOSSNAME_Kologarn"] = "Kologarn"
+L["BOSSNAME_Algalon"] = "Algalon the Observer"
+
+L["BOSSNAME_Auriaya"] = "Auriaya"
+L["BOSSNAME_Freya"] = "Freya"
+L["BOSSNAME_Thorim"] = "Thorim"
+L["BOSSNAME_Hodir"] = "Hodir"
+L["BOSSNAME_Mimiron"] = "Mimiron"
+
+L["BOSSNAME_GeneralVezax"] = "General Vezax"
+L["BOSSNAME_YoggSaron"] = "Yogg-Saron"

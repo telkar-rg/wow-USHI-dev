@@ -1,4 +1,6 @@
-﻿local ADDON_NAME, addonTable = ...;
+﻿local L = LibStub("AceLocale-3.0"):GetLocale("UlduScreenHelperInformer", true)
+
+local ADDON_NAME, addonTable = ...;
 
 addonTable.ADDON_NAME_LONG = 	"Ulduar Screenshot Helper & Informer"
 addonTable.ADDON_NAME_SHORT = 	"USHI"
@@ -42,11 +44,16 @@ addonTable.BossIDList = {
     [33293] = "XT-002 Deconstructor",
         -- The Assembly of Iron will need bossyell for correct tracking
     [32930] = "Kologarn",
+    [34297] = "Kologarn",
     [33515] = "Auriaya",
         -- Freya, Hodir, Mimiron and Thorim will need bossyells - they don't die
     [33271] = "General Vezax",
     [33288] = "Yogg-Saron",
         -- Algalon needs a bossyell - he doesn't die
+}
+
+addonTable.UlduarSubZoneList = {
+	["Das Konservatorium des Lebens"]
 }
 
 addonTable.IconList = {

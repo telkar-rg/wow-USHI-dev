@@ -19,26 +19,35 @@ L["DESC_OPTION_trigger_val_drop"] = "Screenshot nach Zuteilen eines Fragment von
 
 
 -- Ulduar 
-L["Ulduar"] = "Ulduar"
-L["Fragment of Val'anyr"] = "Fragment von Val'anyr"
+L["ITEMNAME_FragmentValanyr"] = "Fragment von Val'anyr"
 
-L["Flame Leviathan"] = "Flammenleviathan";
-L["Ignis the Furnace Master"] = "Ignis, Meister des Eisenwerks";
-L["Razorscale"] = "Klingenschuppe";
-L["XT-002 Deconstructor"] = "XT-002 Dekonstruktor";
 
-L["Assembly of Iron"] = "Versammlung des Eisens";
-L["Steelbreaker"] = "Stahlbrecher";
-L["Runemaster Molgeim"] = "Runenmeister Molgeim";
-L["Stormcaller Brundir"] = "Sturmrufer Brundir";
-L["Kologarn"] = "Kologarn";
-L["Algalon the Observer"] = "Algalon der Beobachter";
+L["ZONENAME_Ulduar"] = "Ulduar"
+L["ZONENAME_SubAntechamber"] = "Die Vorkammer"
+L["ZONENAME_SubKologarn"] = "Der zerschmetterte Gang"
+L["ZONENAME_SubFreya"] = "Das Konservatorium des Lebens"
+L["ZONENAME_SubThorim"] = "Der Donnerschlag"
+L["ZONENAME_SubHodir"] = "Die Hallen des Winters"
+L["ZONENAME_SubMimiron"] = "Der Funke der Imagination"
 
-L["Auriaya"] = "Auriaya";
-L["Freya"] = "Freya";
-L["Thorim"] = "Thorim";
-L["Hodir"] = "Hodir";
-L["Mimiron"] = "Mimiron";
 
-L["General Vezax"] = "General Vezax";
-L["Yogg-Saron"] = "Yogg-Saron";
+L["BOSSNAME_FlameLeviathan"] = "Flammenleviathan";
+L["BOSSNAME_Ignis"] = "Ignis, Meister des Eisenwerks";
+L["BOSSNAME_Razorscale"] = "Klingenschuppe";
+L["BOSSNAME_XT002"] = "XT-002 Dekonstruktor";
+
+L["BOSSNAME_AssemblyIron"] = "Versammlung des Eisens";
+L["BOSSNAME_Steelbreaker"] = "Stahlbrecher";
+L["BOSSNAME_RunemasterMolgeim"] = "Runenmeister Molgeim";
+L["BOSSNAME_StormcallerBrundir"] = "Sturmrufer Brundir";
+L["BOSSNAME_Kologarn"] = "Kologarn";
+L["BOSSNAME_Algalon"] = "Algalon der Beobachter";
+
+L["BOSSNAME_Auriaya"] = "Auriaya";
+L["BOSSNAME_Freya"] = "Freya";
+L["BOSSNAME_Thorim"] = "Thorim";
+L["BOSSNAME_Hodir"] = "Hodir";
+L["BOSSNAME_Mimiron"] = "Mimiron";
+
+L["BOSSNAME_GeneralVezax"] = "General Vezax";
+L["BOSSNAME_YoggSaron"] = "Yogg-Saron";

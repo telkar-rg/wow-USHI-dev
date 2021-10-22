@@ -18,6 +18,10 @@ local ADDON_NAME_LONG = 	addonTable.ADDON_NAME_LONG
 local ADDON_NAME_SHORT = 	addonTable.ADDON_NAME_SHORT
 local ADDON_VERSION = 		addonTable.ADDON_VERSION
 
+local debug_flag = true
+local ch_frame_3 = getglobal("ChatFrame".."3")
+local ch_frame_6 = getglobal("ChatFrame".."6")
+
 
 local db_options, db_char, db_SI
 local OptionsTable = {}
@@ -31,6 +35,27 @@ local Menu
 local head
 local temp_ref
 
+local LockoutID_temp = nil
+local firstLogin = true
+local firstRaidRosterUpdate = true
+local isUlduRaid = false
+
+local function DPrint(...)
+	-- DEFAULT_CHAT_FRAME:AddMessage( chatprefix..tostring(msg) )
+	-- LibStub("AceLocale-3.0"):Print(ADDON_NAME_SHORT,DEFAULT_CHAT_FRAME,...)
+	if debug_flag then
+		local tmp={}
+		local n=1
+		tmp[n] = "|cff33ffff"..tostring( ADDON_NAME_SHORT ).."-debug".."|r:"
+		
+		for i=1, select("#", ...) do
+			n=n+1
+			tmp[n] = tostring(select(i, ...))
+		end
+		DEFAULT_CHAT_FRAME:AddMessage( tconcat(tmp," ",1,n) )
+	end
+end
+
 function addon:OnInitialize()
     -- Called when the addon is loaded
 	addon:GetDB()
@@ -38,42 +63,30 @@ function addon:OnInitialize()
 	
     -- Register the options table
 	self:CreateOptionsTable()
-    AceConfig:RegisterOptionsTable("USHI-Table-1", OptionsTable.general)
-    AceConfig:RegisterOptionsTable("USHI-Table-2", OptionsTable.screen_info)
-    -- AceConfig:RegisterOptionsTable("USHI-Table-3", OptionsTable.screen_info2)
+    AceConfig:RegisterOptionsTable("USHI-Table-GENERAL", OptionsTable.general)
 	
 	-- Setup Blizzard option frames
 	self.optionsFrames = {}
-	-- The ordering here matters, it determines the order in the Blizzard Interface Options
-	self.optionsFrames.general = 	AceConfigDialog:AddToBlizOptions("USHI-Table-1", ADDON_NAME_SHORT)
-	self.optionsFrames.screen_info = AceConfigDialog:AddToBlizOptions("USHI-Table-2", "Screenshot Info",ADDON_NAME_SHORT)
-	-- self.optionsFrames.screen_info2 = AceConfigDialog:AddToBlizOptions("USHI-Table-3", "Screenshot Info2",ADDON_NAME_SHORT)
+	-- self.optionsFrame = AceConfigDialog:AddToBlizOptions(MODNAME, nil, nil, "general")
+	self.optionsFrames.general = AceConfigDialog:AddToBlizOptions("USHI-Table-GENERAL", ADDON_NAME_SHORT)
 	
 	addon:testTree(ADDON_NAME_SHORT)
-	-- self.optionsFrames.screen_info2 = AceConfigDialog:AddToBlizOptions(bFrame.frame, "Screenshot Info2",ADDON_NAME_SHORT)
-	self.optionsFrames.screen_info2 = bFrame.frame
-	temp_ref = self.optionsFrames.screen_info2.obj.children[1].children[1].tree[1]
-	print("optionsFrames.screen_info2.obj.children[1].children[1].tree[1]",temp_ref)
+	self.optionsFrames.screen_info = bFrame.frame
+	InterfaceOptions_AddCategory(self.optionsFrames.screen_info);
+	
+	-- temp_ref = self.optionsFrames.screen_info.obj.children[1].children[1].tree[1]
+	-- DPrint("optionsFrames.screen_info2.obj.children[1].children[1].tree[1]",temp_ref)
 	
 	
-	
-	-- addon:RegisterEvent("ADDON_LOADED");
-    addon:RegisterEvent("CHAT_MSG_LOOT","CheckChatForLoot");
-    -- addon:RegisterEvent("CHAT_MSG_MONSTER_YELL");
-    -- addon:RegisterEvent("CHAT_MSG_WHISPER");
-    addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED","CombatLogHandler");
-    -- addon:RegisterEvent("PLAYER_ENTERING_WORLD");
-    addon:RegisterEvent("RAID_INSTANCE_WELCOME", "OnRaidInstanceWelcome")
-    -- addon:RegisterEvent("RAID_ROSTER_UPDATE");
 	
 	
 	-- Register slash commands
-	addon:RegisterChatCommand("ush", "OnSlashCommand")
+	addon:RegisterChatCommand("ushi", "OnSlashCommand")
 end
 
 
 function addon:testTree(parent)
-	addon:PPrint("called addon:testTree(parent)")
+	DPrint("called addon:testTree(parent)")
 
 	bFrame = AceGUI:Create("BlizOptionsGroup", "bFrame-Create");
 	myGroup = AceGUI:Create("ScrollFrame", "myGroup-Create");
@@ -81,7 +94,7 @@ function addon:testTree(parent)
 	head = AceGUI:Create("Heading");
 	
 	-- BLIZZ options frame
-	bFrame:SetName("bFrame-SetName", parent)
+	bFrame:SetName("Screen Info", parent)
 	bFrame:SetTitle(nil) --"bFrame-SetTitle"
 	bFrame:SetLayout("Fill");
 	
@@ -150,7 +163,7 @@ function addon:testTree(parent)
 
 	bFrame:AddChild(myGroup);
 	
-	InterfaceOptions_AddCategory(bFrame.frame);
+	-- InterfaceOptions_AddCategory(bFrame.frame);
 	
 	
 	self:RegisterChatCommand("ushi", "SlashCommandFunc")
@@ -158,26 +171,51 @@ end
 
 function addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
 
-	print(" ")
-	print("_widget",_widget);
-	print("_event",_event);
+	DPrint(" ")
+	DPrint("_widget",_widget);
+	DPrint("_event",_event);
 	local id_separat = {("\001"):split(_uniquevalue)}
 	
 	-- print("_uniquevalue",":",id_separat[1],",",id_separat[2])
-	print(string.gsub(_uniquevalue,"\001"," , "));
+	DPrint(string.gsub(_uniquevalue,"\001"," , "));
 	
 	selectTree:RefreshTree();
 
 end
 
 
-
-function addon:SlashCommandFunc()
-	addon:PPrint("called the slash command!")
-	addon:TreeUpdate()
+local save_guid = nil
+function addon:OnSlashCommand(input)
+	-- DPrint("called the slash command!")
+	-- addon:TreeUpdate()
 	
-	InterfaceOptionsFrame_OpenToCategory(bFrame.frame) 
-	-- addon:test_table_sort()
+	if input then input = strlower(input) end
+	
+	-- Open About panel if there's no parameters or if we do /arl about
+	if not input or (input and input:trim() == "") or input == "i" or input == "info" then
+		DPrint("SLASH:","Screen Informant.")
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["screen_info"]) 
+	elseif (input == "o" or input == "options") then
+		DPrint("SLASH:","Options.")
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["general"]) 
+	elseif (input == "gen" or input == "generate") then
+		DPrint("SLASH:","Generate Tree.")
+		addon:TreeUpdate()
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.screen_info) 
+	elseif (input == "unreg") then
+		--
+		DPrint("SLASH:","UnregisterEvent(CHAT_MSG_WHISPER.")
+		addon:UnregisterEvent("CHAT_MSG_WHISPER");
+	elseif (input == "test1") then
+		--
+		save_guid = UnitId("target")
+		DPrint("SLASH:","save_guid",save_guid)
+	elseif (input == "test2") then
+		--
+		DPrint("SLASH:","save_guid",UnitReaction("player",save_guid))
+	else
+		DPrint("SLASH:","Help.")
+	end
 end
 
 
@@ -185,7 +223,38 @@ function addon:OnEnable()
     -- Called when the addon is enabled
 	-- print(ADDON_NAME)
 	addon:PrintVersionState()
+	
+    addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- for checking the raid id
+	-- addon:RegisterEvent("ADDON_LOADED");
+    addon:RegisterEvent("CHAT_MSG_LOOT","CheckChatForLoot");
+    addon:RegisterEvent("CHAT_MSG_SYSTEM");
+    addon:RegisterEvent("CHAT_MSG_MONSTER_YELL");
+    addon:RegisterEvent("CHAT_MSG_MONSTER_SAY");
+    -- addon:RegisterEvent("CHAT_MSG_WHISPER");
+    addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+    addon:RegisterEvent("PLAYER_ENTERING_WORLD");
+    addon:RegisterEvent("RAID_INSTANCE_WELCOME")
+    addon:RegisterEvent("RAID_ROSTER_UPDATE");
+	
+	addon:FetchLockoutID() -- try to fetch the raid id, if already exists
 end
+
+function addon:OnDisable()
+    -- Called when the addon is disabled
+	
+    addon:UnregisterEvent("UPDATE_INSTANCE_INFO") -- for checking the raid id
+	-- addon:UnregisterEvent("ADDON_LOADED");
+    addon:UnregisterEvent("CHAT_MSG_LOOT");
+    addon:UnregisterEvent("CHAT_MSG_SYSTEM");
+    addon:UnregisterEvent("CHAT_MSG_MONSTER_YELL");
+    addon:UnregisterEvent("CHAT_MSG_MONSTER_SAY");
+    -- addon:UnregisterEvent("CHAT_MSG_WHISPER");
+    addon:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+    addon:UnregisterEvent("PLAYER_ENTERING_WORLD");
+    addon:UnregisterEvent("RAID_INSTANCE_WELCOME")
+    addon:UnregisterEvent("RAID_ROSTER_UPDATE");
+end
+
 
 function addon:PrintVersionState()
 	local addon_state
@@ -196,10 +265,6 @@ function addon:PrintVersionState()
 		addon_state = "|c"..ColorList["GRAY"].."inactive".."|r"
 	end
 	addon:PPrint("Version",ADDON_VERSION,"(".. addon_state ..")")
-end
-
-function addon:OnDisable()
-    -- Called when the addon is disabled
 end
 
 
@@ -236,13 +301,11 @@ end
 
 function addon:CreateOptionsTable()
 	OptionsTable.general = {}
-	OptionsTable.screen_info = {}
-	OptionsTable.multiline_edit = {}
-
-
+	
 	OptionsTable.general = {
-		name = ADDON_NAME_LONG,
+		order = 1,
 		type = 'group',
+		name = ADDON_NAME_LONG,
 		args = {
 			addon_enable = {
 				name = L["Enable Addon"],
@@ -272,8 +335,8 @@ function addon:CreateOptionsTable()
 				name = L["Screenshot Triggers"],
 			},
 			trigger_boss_FlameLevi = {
-				name = L["Flame Leviathan"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Flame Leviathan"],
+				name = L["BOSSNAME_FlameLeviathan"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_FlameLeviathan"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.FlameLevi = val end,
 				get = function(info) return db_options.screen_trigger.FlameLevi end,
@@ -281,8 +344,8 @@ function addon:CreateOptionsTable()
 				order = 55
 			},
 			trigger_boss_Ignis = {
-				name = L["Ignis the Furnace Master"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Ignis the Furnace Master"],
+				name = L["BOSSNAME_Ignis"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Ignis"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Ignis = val end,
 				get = function(info) return db_options.screen_trigger.Ignis end,
@@ -290,8 +353,8 @@ function addon:CreateOptionsTable()
 				order = 60
 			},
 			trigger_boss_Razorscale = {
-				name = L["Razorscale"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Razorscale"],
+				name = L["BOSSNAME_Razorscale"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Razorscale"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Razorscale = val end,
 				get = function(info) return db_options.screen_trigger.Razorscale end,
@@ -299,8 +362,8 @@ function addon:CreateOptionsTable()
 				order = 70
 			},
 			trigger_boss_XT002 = {
-				name = L["XT-002 Deconstructor"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["XT-002 Deconstructor"],
+				name = L["BOSSNAME_XT002"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_XT002"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.XT002 = val end,
 				get = function(info) return db_options.screen_trigger.XT002 end,
@@ -308,8 +371,8 @@ function addon:CreateOptionsTable()
 				order = 75
 			},
 			trigger_boss_AssemblyIron = {
-				name = L["Assembly of Iron"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Assembly of Iron"],
+				name = L["BOSSNAME_AssemblyIron"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_AssemblyIron"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.AssemblyIron = val end,
 				get = function(info) return db_options.screen_trigger.AssemblyIron end,
@@ -317,8 +380,8 @@ function addon:CreateOptionsTable()
 				order = 80
 			},
 			trigger_boss_Kologarn = {
-				name = L["Kologarn"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Kologarn"],
+				name = L["BOSSNAME_Kologarn"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Kologarn"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Kologarn = val end,
 				get = function(info) return db_options.screen_trigger.Kologarn end,
@@ -326,8 +389,8 @@ function addon:CreateOptionsTable()
 				order = 85
 			},
 			trigger_boss_Algalon = {
-				name = L["Algalon the Observer"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Algalon the Observer"],
+				name = L["BOSSNAME_Algalon"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Algalon"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Algalon = val end,
 				get = function(info) return db_options.screen_trigger.Algalon end,
@@ -335,8 +398,8 @@ function addon:CreateOptionsTable()
 				order = 90
 			},
 			trigger_boss_Auriaya = {
-				name = L["Auriaya"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Auriaya"],
+				name = L["BOSSNAME_Auriaya"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Auriaya"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Auriaya = val end,
 				get = function(info) return db_options.screen_trigger.Auriaya end,
@@ -344,8 +407,8 @@ function addon:CreateOptionsTable()
 				order = 95
 			},
 			trigger_boss_Freya = {
-				name = L["Freya"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Freya"],
+				name = L["BOSSNAME_Freya"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Freya"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Freya = val end,
 				get = function(info) return db_options.screen_trigger.Freya end,
@@ -353,8 +416,8 @@ function addon:CreateOptionsTable()
 				order = 100
 			},
 			trigger_boss_Thorim = {
-				name = L["Thorim"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Thorim"],
+				name = L["BOSSNAME_Thorim"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Thorim"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Thorim = val end,
 				get = function(info) return db_options.screen_trigger.Thorim end,
@@ -362,8 +425,8 @@ function addon:CreateOptionsTable()
 				order = 105
 			},
 			trigger_boss_Hodir = {
-				name = L["Hodir"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Hodir"],
+				name = L["BOSSNAME_Hodir"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Hodir"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Hodir = val end,
 				get = function(info) return db_options.screen_trigger.Hodir end,
@@ -371,8 +434,8 @@ function addon:CreateOptionsTable()
 				order = 110
 			},
 			trigger_boss_Mimiron = {
-				name = L["Mimiron"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Mimiron"],
+				name = L["BOSSNAME_Mimiron"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_Mimiron"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Mimiron = val end,
 				get = function(info) return db_options.screen_trigger.Mimiron end,
@@ -380,8 +443,8 @@ function addon:CreateOptionsTable()
 				order = 115
 			},
 			trigger_boss_Vezax = {
-				name = L["General Vezax"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["General Vezax"],
+				name = L["BOSSNAME_GeneralVezax"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_GeneralVezax"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Vezax = val end,
 				get = function(info) return db_options.screen_trigger.Vezax end,
@@ -389,8 +452,8 @@ function addon:CreateOptionsTable()
 				order = 120
 			},
 			trigger_boss_Yogg = {
-				name = L["Yogg-Saron"],
-				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["Yogg-Saron"],
+				name = L["BOSSNAME_YoggSaron"],
+				desc = L["DESC_OPTION_trigger_boss_prefix"]..L["BOSSNAME_YoggSaron"],
 				type = "toggle",
 				set = function(info, val) db_options.screen_trigger.Yogg = val end,
 				get = function(info) return db_options.screen_trigger.Yogg end,
@@ -408,117 +471,23 @@ function addon:CreateOptionsTable()
 			},
 		},
 	}
-	
-	
-	OptionsTable.screen_info = {
-		name = "Screenshot Info",
-		type = 'group',
-		args = {
-			str = {
-				type = 'group',
-				order = 2,
-				name = "Strength",
-				desc = "Changes the display of Strength",
-				args = {
-					ap = {
-						type = 'input',
-						width = "full",
-						multiline = 19,
-						name = "Screenshot Info",
-						desc = "Mark all and copy the text",
-						-- arg = "showAPFromStr",
-						get = function(info) return "test\ntest2" end,
-						set = false, -- function(info, value) end,
-						-- get = getProfileOption,
-						-- set = setProfileOptionAndClearCache,
-					},
-					delete_this = {
-						type = "execute",
-						name = "Delete this Entry",
-						order = -1,
-						confirm = true,
-						func = function()  end,
-					}
-				},
-			},
-			agi = {
-				type = 'group',
-				order = 3,
-				name = "Agility",
-				desc = "Changes the display of Agility",
-				args = {
-					crit = {
-						type = 'toggle',
-						width = "full",
-						name = "Show Crit",
-						desc = "Show Crit chance from Agility",
-						arg = "showCritFromAgi",
-						-- get = getProfileOption,
-						-- set = setProfileOptionAndClearCache,
-					},
-				},
-			},
-			sta = {
-				type = 'group',
-				order = 4,
-				name = "Stamina",
-				desc = "Changes the display of Stamina",
-				args = {
-					hp = {
-						type = 'toggle',
-						width = "full",
-						name = "Show Health",
-						desc = "Show Health from Stamina",
-						arg = "showHealthFromSta",
-						-- get = getProfileOption,
-						-- set = setProfileOptionAndClearCache,
-					},
-				},
-			},
-			int = {
-				type = 'group',
-				order = 5,
-				name = "Intellect",
-				desc = "Changes the display of Intellect",
-				args = {
-					spellcrit = {
-						type = 'toggle',
-						width = "full",
-						name = "Show Spell Crit",
-						desc = "Show Spell Crit chance from Intellect",
-						arg = "showSpellCritFromInt",
-						-- get = getProfileOption,
-						-- set = setProfileOptionAndClearCache,
-					},
-				},
-			},
-			spi = {
-				type = 'group',
-				order = 6,
-				name = "Spirit",
-				desc = "Changes the display of Spirit",
-				args = {
-					mp5nc = {
-						type = 'toggle',
-						width = "full",
-						name = "Show Mana Regen while NOT casting",
-						desc = "Show Mana Regen while NOT casting from Spirit",
-						arg = "showMP5NCFromSpi",
-						-- get = getProfileOption,
-						-- set = setProfileOptionAndClearCache,
-					},
-				},
-			},
-		}
-	}
-	
+		
 	
 end
 
 function addon:test_fill_db_si()
-	db_SI["2021-10-01"] = {
-		["12:31:45"] = {
+	local temp_idweek
+	-- db_SI = {}
+	for k, v in pairs(db_SI) do
+		db_SI[k]=nil
+	end
+	-- year, week, id
+	
+	db_SI["2021 W40: 512"] = {
+		["10.01. 12:31:45"] = {
 			["icon"] = addonTable.IconList["Default"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulpho",
 			["reason"] = "Default",
 			["raid"] = {
@@ -529,8 +498,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:31:55"]={
+		["10.01. 12:31:55"]={
 			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Maricon received 1x Fragment of Val'anyr",
 			["raid"] = {
@@ -541,8 +512,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:00"]={
+		["10.01. 12:32:00"]={
 			["icon"] = addonTable.IconList["Flame Leviathan"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Flame Leviathan",
 			["raid"] = {
@@ -553,8 +526,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:01"]={
+		["10.01. 12:32:01"]={
 			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Ignis the Furnace Master",
 			["raid"] = {
@@ -565,8 +540,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:02"]={
+		["10.01. 12:32:02"]={
 			["icon"] = addonTable.IconList["Razorscale"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Razorscale",
 			["raid"] = {
@@ -577,8 +554,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:03"]={
+		["10.01. 12:32:03"]={
 			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "XT-002 Deconstructor",
 			["raid"] = {
@@ -589,8 +568,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:04"]={
+		["10.01. 12:32:04"]={
 			["icon"] = addonTable.IconList["Assembly of Iron"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Assembly of Iron",
 			["raid"] = {
@@ -601,8 +582,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:05"]={
+		["10.01. 12:32:05"]={
 			["icon"] = addonTable.IconList["Kologarn"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Kologarn",
 			["raid"] = {
@@ -613,8 +596,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:06"]={
+		["10.01. 12:32:06"]={
 			["icon"] = addonTable.IconList["Algalon the Observer"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Algalon the Observer",
 			["raid"] = {
@@ -625,8 +610,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:07"]={
+		["10.01. 12:32:07"]={
 			["icon"] = addonTable.IconList["Auriaya"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Auriaya",
 			["raid"] = {
@@ -637,8 +624,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:08"]={
+		["10.01. 12:32:08"]={
 			["icon"] = addonTable.IconList["Freya"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Freya",
 			["raid"] = {
@@ -649,8 +638,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:09"]={
+		["10.01. 12:32:09"]={
 			["icon"] = addonTable.IconList["Thorim"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Thorim",
 			["raid"] = {
@@ -661,8 +652,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:10"]={
+		["10.01. 12:32:10"]={
 			["icon"] = addonTable.IconList["Hodir"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Hodir",
 			["raid"] = {
@@ -673,8 +666,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:11"]={
+		["10.01. 12:32:11"]={
 			["icon"] = addonTable.IconList["Mimiron"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Mimiron",
 			["raid"] = {
@@ -685,8 +680,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:12"]={
+		["10.01. 12:32:12"]={
 			["icon"] = addonTable.IconList["General Vezax"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "General Vezax",
 			["raid"] = {
@@ -697,8 +694,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:13"]={
+		["10.01. 12:32:13"]={
 			["icon"] = addonTable.IconList["Yogg-Saron"],
+			["ID"] = 512,
+			["timestamp"] = "2021-10-01 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Yogg-Saron",
 			["raid"] = {
@@ -711,9 +710,11 @@ function addon:test_fill_db_si()
 		},
 	}
 	
-	db_SI["2021-10-22"] = {
-		["12:31:45"] = {
+	db_SI["2021 W42: 2345"] = {
+		["10.24. 12:31:45"] = {
 			["icon"] = addonTable.IconList["Default"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:31:55",
 			["raidlead"] = "wulpho",
 			["reason"] = "Default",
 			["raid"] = {
@@ -724,8 +725,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:31:55"]={
+		["10.24. 12:31:55"]={
 			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:31:55",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Maricon received 1x Fragment of Val'anyr",
 			["raid"] = {
@@ -736,8 +739,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:00"]={
+		["10.24. 12:32:00"]={
 			["icon"] = addonTable.IconList["Flame Leviathan"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:00",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Flame Leviathan",
 			["raid"] = {
@@ -748,8 +753,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:01"]={
+		["10.24. 12:32:01"]={
 			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:01",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Ignis the Furnace Master",
 			["raid"] = {
@@ -760,8 +767,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:02"]={
+		["10.24. 12:32:02"]={
 			["icon"] = addonTable.IconList["Razorscale"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:02",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Razorscale",
 			["raid"] = {
@@ -772,8 +781,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:03"]={
+		["10.24. 12:32:03"]={
 			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:03",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "XT-002 Deconstructor",
 			["raid"] = {
@@ -784,8 +795,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:04"]={
+		["10.24. 12:32:04"]={
 			["icon"] = addonTable.IconList["Assembly of Iron"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:04",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Assembly of Iron",
 			["raid"] = {
@@ -796,8 +809,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:05"]={
+		["10.24. 12:32:05"]={
 			["icon"] = addonTable.IconList["Kologarn"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:05",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Kologarn",
 			["raid"] = {
@@ -808,8 +823,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:06"]={
+		["10.24. 12:32:06"]={
 			["icon"] = addonTable.IconList["Algalon the Observer"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:06",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Algalon the Observer",
 			["raid"] = {
@@ -820,8 +837,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:07"]={
+		["10.24. 12:32:07"]={
 			["icon"] = addonTable.IconList["Auriaya"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:07",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Auriaya",
 			["raid"] = {
@@ -832,8 +851,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:08"]={
+		["10.24. 12:32:08"]={
 			["icon"] = addonTable.IconList["Freya"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:08",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Freya",
 			["raid"] = {
@@ -844,8 +865,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:09"]={
+		["10.24. 12:32:09"]={
 			["icon"] = addonTable.IconList["Thorim"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:09",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Thorim",
 			["raid"] = {
@@ -856,8 +879,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:10"]={
+		["10.24. 12:32:10"]={
 			["icon"] = addonTable.IconList["Hodir"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:10",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Hodir",
 			["raid"] = {
@@ -868,8 +893,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:11"]={
+		["10.24. 12:32:11"]={
 			["icon"] = addonTable.IconList["Mimiron"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:11",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Mimiron",
 			["raid"] = {
@@ -880,8 +907,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:12"]={
+		["10.24. 12:32:12"]={
 			["icon"] = addonTable.IconList["General Vezax"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:12",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "General Vezax",
 			["raid"] = {
@@ -892,8 +921,10 @@ function addon:test_fill_db_si()
 				"assdrerrrrrda",
 			},
 		},
-		["12:32:13"]={
+		["10.24. 12:32:13"]={
 			["icon"] = addonTable.IconList["Yogg-Saron"],
+			["ID"] = 2345,
+			["timestamp"] = "2021-10-24 12:32:13",
 			["raidlead"] = "wulphoqwe",
 			["reason"] = "Yogg-Saron",
 			["raid"] = {
@@ -907,65 +938,14 @@ function addon:test_fill_db_si()
 	}
 end
 
-function addon:test_table_sort()
-	print("\n-")
-	local a_keys = {}
-	local a = {
-	   ["2021-10-23"] = {
-		  ["12:32:11"] = { a=1 },
-		  ["12:31:55"] = { a=1 },
-		  ["12:32:12"] = { a=1 },
-		  ["12:32:02"] = { a=1 },
-		  ["12:32:13"] = { a=1 },
-		  ["12:32:06"] = { a=1 },
-		  ["12:32:03"] = { a=1 },
-		  ["12:32:09"] = { a=1 },
-		  ["12:32:10"] = { a=1 },
-		  ["12:32:01"] = { a=1 },
-		  ["12:32:05"] = { a=1 },
-		  ["12:32:08"] = { a=1  },
-		  ["12:32:00"] = { a=1  },
-		  ["12:31:45"] = { a=1  },
-		  ["12:32:07"] = { a=1  },
-		  ["12:32:04"] = { a=1  }
-	   },
-	   ["2021-10-22"] = {
-		  ["18:31:55"] = { a=1  },
-		  ["18:31:45"] = { a=1 }
-	   }
-	}
-	
-	for k in pairs(a) do table.insert(a_keys, k) end
-	for _, k in ipairs(a_keys) do 
-		-- print(k, a[k]) 
-		print(k) 
-		local b = a[k]
-		for k2 in pairs(b) do 
-			print(" ",k2, b[k2]) 
-		end
-	end
-	
-	print(" split ---")
-	table.sort(a_keys)
-	
-	for _, k in ipairs(a_keys) do 
-		-- print(k, a[k]) 
-		print(k)
-		local b_keys = {}
-		local b = a[k]
-		for l in pairs(b) do table.insert(b_keys, l) end
-		table.sort(b_keys)
-		for _, k2 in ipairs(b_keys) do 
-			print(" ",k2, b[k2]) 
-		end
-	end
-	
-end
+
 
 function addon:TreeUpdate()
 	local num_1, num_2
 	local keys_1, keys_2
-	local current_date_tbl, current_time_tbl, Menu_Sub
+	local current_weekID_tbl, current_time_tbl, Menu_Sub
+	local string_color
+	
 	-- Menu = {}
 	for k, v in pairs(Menu) do
 		Menu[k]=nil
@@ -974,31 +954,41 @@ function addon:TreeUpdate()
 	-- db_SI
 	keys_1 = {}
 	num_1 = 1
-	for k1 in pairs(db_SI) do table.insert(keys_1, k1) end -- fetch and store all "idx_date" keys
-	table.sort(keys_1) -- sort "idx_date" keys
-	for _, idx_date in ipairs(keys_1) do 
-		current_date_tbl = db_SI[idx_date] -- fetch table of current idx_date
+	for k1 in pairs(db_SI) do table.insert(keys_1, k1) end -- fetch and store all "idx_weekID" keys
+	table.sort(keys_1, function(a,b) return a>b end) -- sort "idx_weekID" keys
+	for _, idx_weekID in ipairs(keys_1) do 
+		current_weekID_tbl = db_SI[idx_weekID] -- fetch table of current idx_weekID
 		Menu[num_1] = {}
-		Menu[num_1].value = idx_date
-		Menu[num_1].text = 	idx_date
-		Menu[num_1].table_ref = current_date_tbl
+		Menu[num_1].value = idx_weekID
+		Menu[num_1].text = 	idx_weekID
+		Menu[num_1].table_ref = current_weekID_tbl
 		Menu[num_1].children = {}
 		Menu_Sub = Menu[num_1].children
 		num_1 = num_1 + 1
 		
 		keys_2 = {}
 		num_2 = 1
-		for k2 in pairs(current_date_tbl) do table.insert(keys_2, k2) end -- fetch and store all "idx_time" keys
-		table.sort(keys_2) -- sort "idx_time" keys
+		for k2 in pairs(current_weekID_tbl) do table.insert(keys_2, k2) end -- fetch and store all "idx_time" keys
+		table.sort(keys_2, function(a,b) return a>b end) -- sort "idx_time" keys
 		for _, idx_time in ipairs(keys_2) do 
-			current_time_tbl = current_date_tbl[idx_time] -- fetch table of current idx_time
-			Menu_Sub[num_2] = {}
-			Menu_Sub[num_2].value = idx_time
+			current_time_tbl = current_weekID_tbl[idx_time] -- fetch table of current idx_time
+			
+			string_color = nil -- default assignment: no color change of text
 			if current_time_tbl.icon == addonTable.IconList["Fragment of Val'anyr"] then
-				Menu_Sub[num_2].text = 	"|cffff9933"..tostring( idx_time ).."|r"
-			else
-				Menu_Sub[num_2].text = 	idx_time
+				string_color = "FFff9933"	-- make fragments orange (legendary)
+			elseif current_time_tbl.icon == addonTable.IconList["Algalon the Observer"] then
+				string_color = "FF3fc7eb"	-- make Algalon light-blue (mage)
+			elseif current_time_tbl.icon == addonTable.IconList["Yogg-Saron"] then
+				string_color = "FFb048f8"	-- make Yogg-Saron purple (epic)
 			end
+			
+			Menu_Sub[num_2] = {}
+			if string_color then
+				Menu_Sub[num_2].text = 	"|c"..string_color..tostring( idx_time ).."|r"
+			else
+				Menu_Sub[num_2].text = 	tostring(idx_time)
+			end
+			Menu_Sub[num_2].value = idx_time
 			Menu_Sub[num_2].icon = 	current_time_tbl.icon
 			Menu_Sub[num_2].table_ref = current_time_tbl
 			num_2 = num_2 + 1
@@ -1008,26 +998,140 @@ function addon:TreeUpdate()
 	
 	self.db.global["MENU"] = Menu
 	selectTree:RefreshTree();
-	addon:PPrint("called addon:TreeUpdate()")
+	DPrint("called addon:TreeUpdate()")
 	
+end
+
+
+function addon:FetchLockoutID()
+	-- only try if we dont have the id grabbed yet
+	if not LockoutID_temp then 
+		RequestRaidInfo()	-- we need to call for [RequestRaidInfo], rest is handled in the UPDATE_INSTANCE_INFO event handler
+	end 
 end
 
 
 
 
-function addon:OnRaidInstanceWelcome(eventname, ...)
+function addon:CheckIfUlduRaid()
+    if (GetNumRaidMembers() == 0) then
+		addon:setUlduRaid(false)
+	else
+		-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
+		local instanceName, instanceType, _, _, maxPlayers = GetInstanceInfo()
+		
+		-- if (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and (maxPlayers==25 or maxPlayers>0) then --DEBUG ignore raid size for now (at least >0)
+		if (instanceName==L["ZONENAME_Ulduar"]) and (maxPlayers==25) then
+			addon:FetchLockoutID()
+			addon:setUlduRaid(true)
+		else
+			addon:setUlduRaid(false)
+		end
+	end
+end
+
+
+
+
+function addon:setUlduRaid(new_state)
+	isUlduRaid = new_state
+	DPrint("isUlduRaid", tostring(isUlduRaid) )
+end
+
+-- ********************************************************
+-- ** Functions for Registered Events
+-- ********************************************************
+
+function addon:UPDATE_INSTANCE_INFO()
+    -- Fired when data from [RequestRaidInfo] is available. 
+	DPrint("addon:UPDATE_INSTANCE_INFO")
+	
+	-- only try if we are in uldu raid and we have not grabbed lockout id yet
+	if isUlduRaid and not LockoutID_temp then 
+	
+		local index, reset_time, reset_date, reset_week
+		local instanceName, instanceID, instanceResetSeconds, instanceDifficulty, locked, isRaid, maxPlayers
+		for index=1,GetNumSavedInstances() do
+			instanceName, instanceID, instanceResetSeconds, instanceDifficulty, locked, _, _, isRaid, maxPlayers, _ = GetSavedInstanceInfo(index)
+			if locked  and (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and maxPlayers==25 then
+			-- if locked  and (instanceName==L["ZONENAME_Ulduar"] ) and maxPlayers==25 then
+				reset_time = time() + instanceResetSeconds -- get the time for when this id resets
+				reset_date = date("*t", reset_time) -- turn to table {year = 1998, month = 9, day = 16, yday = 259, wday = 4, hour = 23, min = 48, sec = 10, isdst = false}
+				reset_week = math.ceil( reset_date.yday / 7 ) -- take the year-day and divide by 7 to get the calendar-week-number
+				-- string raid id: YEAR, WEEK, ID
+				LockoutID_temp = tostring(reset_date.year)..","..tostring(reset_week)..","..tostring(instanceID)
+				DPrint("LockoutID_temp",LockoutID_temp)
+				break;
+			end
+		end -- for index=1,GetNumSavedInstances
+		
+	end -- if not LockoutID_temp
+end
+
+local INSTANCE_SAVED = _G["INSTANCE_SAVED"]
+function addon:CHAT_MSG_SYSTEM(event, msg)
+    -- You are now saved to this instances.
+    -- Refresh RaidInfo
+    if tostring(msg) == INSTANCE_SAVED then
+		DPrint("CHAT_MSG_SYSTEM - INSTANCE_SAVED")
+        RequestRaidInfo()
+    end
+end
+
+function addon:CHAT_MSG_MONSTER_YELL(event,...)
+	DPrint("CHAT_MSG_MONSTER_YELL")
 	args = {...}
-	print("addon:OnRaidInstanceWelcome")
-	print(eventname)
+	
+	local myPayload = ""
+	for k, v in pairs(args) do
+		myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
+	end
+	DPrint(myPayload)
+end
+
+function addon:CHAT_MSG_MONSTER_SAY(event,...)
+	DPrint("CHAT_MSG_MONSTER_SAY")
+	args = {...}
+	
+	local myPayload = ""
+	for k, v in pairs(args) do
+		myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
+	end
+	DPrint(myPayload)
+end
+
+function addon:RAID_INSTANCE_WELCOME()
+	DPrint("addon:RAID_INSTANCE_WELCOME")
 	
 	-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
 	local instanceName, instanceType, _, _, maxPlayers = GetInstanceInfo()
-	print("instanceName",":",instanceName)
-	print("instanceType",":",instanceType)
-	print("maxPlayers",":",maxPlayers)
+	DPrint(instanceName, maxPlayers)
+	
+	addon:CheckIfUlduRaid()
 end
 
-function addon:CombatLogHandler(eventname, ...)
+
+function addon:PLAYER_ENTERING_WORLD(...)
+	DPrint("addon:PLAYER_ENTERING_WORLD")
+	if firstLogin then
+		firstLogin = false -- check only once
+		addon:CheckIfUlduRaid()
+	end
+end
+
+
+function addon:RAID_ROSTER_UPDATE(...)
+	DPrint("addon:RAID_ROSTER_UPDATE")
+	
+	
+    if firstRaidRosterUpdate then
+		firstRaidRosterUpdate = false -- call only once
+		addon:CheckIfUlduRaid()
+    end
+end
+
+
+function addon:COMBAT_LOG_EVENT_UNFILTERED(eventname, ...)
     local _, combatEvent, _, _, _, destGUID, destName = ...;
 	
     
@@ -1119,7 +1223,7 @@ end
 ----------------------------------
 function addon:IsInstanceUlduar(boss)
     local instanceInfoName = GetInstanceInfo();
-    if (instanceInfoName == L["Ulduar"]) then
+    if (instanceInfoName == L["ZONENAME_Ulduar"]) then
         return boss;
     else
         return nil;
@@ -1159,5 +1263,7 @@ function addon:PPrint(...)
 		n=n+1
 		tmp[n] = tostring(select(i, ...))
 	end
+	ch_frame_3:AddMessage( tconcat(tmp," ",1,n) )
+	-- ch_frame_6:AddMessage( tconcat(tmp," ",1,n) )
 	DEFAULT_CHAT_FRAME:AddMessage( tconcat(tmp," ",1,n) )
 end
