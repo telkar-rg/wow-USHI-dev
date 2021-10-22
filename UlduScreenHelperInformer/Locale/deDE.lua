@@ -12,14 +12,15 @@ L["DESC_OPTION_chat_output"] = "Ein-/Ausschalten der Ausgabe von Zeitstempel und
 L["Screenshot Triggers"] = "Screenshot Auslöser"
 
 L["DESC_OPTION_trigger_boss_prefix"] = "Screenshot nach Besiegen von "
-L["Fragment looting"] = ORANGE.."Fragment Loot"
-L["DESC_OPTION_trigger_val_drop"] = "Screenshot nach Zuteilen eines Fragments von Val'anyr"
+L["Fragment looting"] = ORANGE.."Fragment Loot".."|r"
+L["DESC_OPTION_trigger_val_drop"] = "Screenshot nach Zuteilen eines Fragment von Val'anyr"
 
 
 
 
 -- Ulduar 
 L["Ulduar"] = "Ulduar"
+L["Fragment of Val'anyr"] = "Fragment von Val'anyr"
 
 L["Flame Leviathan"] = "Flammenleviathan";
 L["Ignis the Furnace Master"] = "Ignis, Meister des Eisenwerks";

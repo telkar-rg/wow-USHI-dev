@@ -49,6 +49,25 @@ addonTable.BossIDList = {
         -- Algalon needs a bossyell - he doesn't die
 }
 
+addonTable.IconList = {
+    ["Default"] = 					"Interface\\Icons\\".."inv_misc_questionmark",
+    ["Fragment of Val'anyr"] = 		"Interface\\Icons\\".."inv_ingot_titansteel_red",
+    ["Flame Leviathan"] = 			"Interface\\Icons\\".."ability_vehicle_siegeenginecharge",--"inv_misc_wrench_02", --"achievement_boss_theflameleviathan_01",
+    ["Ignis the Furnace Master"] = 	"Interface\\Icons\\".."spell_fire_immolation", --"achievement_boss_ignis_01",
+    ["Razorscale"] = 				"Interface\\Icons\\".."ability_mount_razorscale",--"achievement_boss_razorscale",
+	["XT-002 Deconstructor"] = 		"Interface\\Icons\\".."spell_brokenheart",--"achievement_boss_xt002deconstructor_01",
+	["Assembly of Iron"] = 			"Interface\\Icons\\".."achievement_boss_theironcouncil_01", --"achievement_dungeon_ulduarraid_irondwarf_01",
+	["Kologarn"] = 					"Interface\\Icons\\".."inv_elemental_primal_earth",--"achievement_boss_kologarn_01",
+	["Algalon the Observer"] = 		"Interface\\Icons\\".."achievement_boss_algalon_01",--"achievement_boss_algalon_01",
+	["Auriaya"] = 					"Interface\\Icons\\".."ability_mount_blackpanther",--"achievement_boss_auriaya_01",
+	["Freya"] = 					"Interface\\Icons\\".."inv_sigil_freya",--"achievement_boss_freya_01",
+	["Thorim"] = 					"Interface\\Icons\\".."inv_sigil_thorim",--"achievement_boss_thorim",
+	["Hodir"] = 					"Interface\\Icons\\".."inv_sigil_hodir",--"achievement_boss_hodir_01",
+	["Mimiron"] = 					"Interface\\Icons\\".."inv_sigil_mimiron",--"achievement_boss_mimiron_01",
+	["General Vezax"] = 			"Interface\\Icons\\".."inv_misc_ahnqirajtrinket_05",--"achievement_boss_generalvezax_01",
+	["Yogg-Saron"] = 				"Interface\\Icons\\".."spell_shadow_shadesofdarkness",--"achievement_boss_yoggsaron_01",
+}
+
 
 addonTable.ItemIDList = {
 	[45038] = "Val'anyr Fragment",

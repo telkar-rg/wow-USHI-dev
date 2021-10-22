@@ -1,5 +1,7 @@
 ﻿local ADDON_NAME, addonTable = ...;
 
+local ADDON_NAME, addonTable = ...;
+
 local L = LibStub("AceLocale-3.0"):NewLocale(ADDON_NAME, "enUS", true)
 if not L then return end
 local ORANGE = "|cffff9933"
@@ -12,7 +14,7 @@ L["DESC_OPTION_chat_output"] = "Toggles the output of time stamp and trigger rea
 L["Screenshot Triggers"] = true
 
 L["DESC_OPTION_trigger_boss_prefix"] = "Screenshot after kill of "
-L["Fragment looting"] = ORANGE.."Fragment looting"
+L["Fragment looting"] = ORANGE.."Fragment looting".."|r"
 L["DESC_OPTION_trigger_val_drop"] = "Screenshot after looting of Fragment of Val'anyr"
 
 
@@ -21,7 +23,8 @@ L["DESC_OPTION_trigger_val_drop"] = "Screenshot after looting of Fragment of Val
 
 
 -- Ulduar 
-L["Ulduar"] = "Ulduar"
+L["Ulduar"] = true
+L["Fragment of Val'anyr"] = true
 
 L["Flame Leviathan"] = true
 L["Ignis the Furnace Master"] = true

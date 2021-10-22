@@ -19,9 +19,9 @@ local ADDON_NAME_SHORT = 	addonTable.ADDON_NAME_SHORT
 local ADDON_VERSION = 		addonTable.ADDON_VERSION
 
 
-local db_options, db_char
+local db_options, db_char, db_SI
 local OptionsTable = {}
-local Options_SI = {}
+-- local Options_SI = {}
 
 
 local bFrame
@@ -34,6 +34,7 @@ local temp_ref
 function addon:OnInitialize()
     -- Called when the addon is loaded
 	addon:GetDB()
+	addon:test_fill_db_si()
 	
     -- Register the options table
 	self:CreateOptionsTable()
@@ -72,6 +73,7 @@ end
 
 
 function addon:testTree(parent)
+	addon:PPrint("called addon:testTree(parent)")
 
 	bFrame = AceGUI:Create("BlizOptionsGroup", "bFrame-Create");
 	myGroup = AceGUI:Create("ScrollFrame", "myGroup-Create");
@@ -80,7 +82,7 @@ function addon:testTree(parent)
 	
 	-- BLIZZ options frame
 	bFrame:SetName("bFrame-SetName", parent)
-	bFrame:SetTitle("bFrame-SetTitle")
+	bFrame:SetTitle(nil) --"bFrame-SetTitle"
 	bFrame:SetLayout("Fill");
 	
 	-- Main Scroll Container Group in the BLIZZ options frame
@@ -92,7 +94,7 @@ function addon:testTree(parent)
 		{
 			text = "Shopping",
 			value = "shop-value",
-			func=function() print"FUNC!" end,
+			func=function() print("FUNC!") end,
 			children = {
 				{
 					text = "asdasda",
@@ -140,16 +142,7 @@ function addon:testTree(parent)
 	
 	-- selectTree:SetCallback("OnGroupSelected", function(group, event, id) Gnomexcel:PortWindow(id); end);
 	selectTree:SetCallback("OnGroupSelected", function(_widget, _event, _uniquevalue)
-		print(" ")
-		print(_widget,"--");
-		print(_event,"--");
-		local id_separat = {("\001"):split(_uniquevalue)}
-		
-		print("id_separat",",",id_separat[1],",",id_separat[2])
-		print(string.gsub(_uniquevalue,"\001"," > "),"--");
-		
-		selectTree:RefreshTree();
-
+		addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
 	end	)
 	
 	
@@ -159,14 +152,32 @@ function addon:testTree(parent)
 	
 	InterfaceOptions_AddCategory(bFrame.frame);
 	
+	
 	self:RegisterChatCommand("ushi", "SlashCommandFunc")
+end
+
+function addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
+
+	print(" ")
+	print("_widget",_widget);
+	print("_event",_event);
+	local id_separat = {("\001"):split(_uniquevalue)}
+	
+	-- print("_uniquevalue",":",id_separat[1],",",id_separat[2])
+	print(string.gsub(_uniquevalue,"\001"," , "));
+	
+	selectTree:RefreshTree();
+
 end
 
 
 
 function addon:SlashCommandFunc()
 	addon:PPrint("called the slash command!")
+	addon:TreeUpdate()
+	
 	InterfaceOptionsFrame_OpenToCategory(bFrame.frame) 
+	-- addon:test_table_sort()
 end
 
 
@@ -191,28 +202,16 @@ function addon:OnDisable()
     -- Called when the addon is disabled
 end
 
--- Determines what to do when the slash command is called.
-function addon:OnSlashCommand(input)
-	
-	
-	if (input:lower() == "enable") then
-		--
-	elseif (input:lower() == "disable") then
-		--
-	else
-		-- AceConfigDialog:Open(ADDON_NAME)
-		-- InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		InterfaceOptionsFrame_OpenToCategory(ADDON_NAME_LONG)
-	end
-	
-end
+
 
 function addon:GetDB()
 	self.db = AceDB:New("USHI_DB")
 	if self.db.global == nil then self.db.global = {} end
 	if self.db.global["OPTIONS"] == nil then self.db.global["OPTIONS"] = {} end
+	if self.db.global["SCREEN INFO"] == nil then self.db.global["SCREEN INFO"] = {} end
 	if self.db.char  == nil then self.db.char = {} end
 	db_options = self.db.global["OPTIONS"]
+	db_SI = self.db.global["SCREEN INFO"]
 	db_char = self.db.char
 	
 	if db_char.addon_active == nil then 				db_char.addon_active = 					defaults.addon_active end
@@ -513,6 +512,503 @@ function addon:CreateOptionsTable()
 		}
 	}
 	
+	
+end
+
+function addon:test_fill_db_si()
+	db_SI["2021-10-01"] = {
+		["12:31:45"] = {
+			["icon"] = addonTable.IconList["Default"],
+			["raidlead"] = "wulpho",
+			["reason"] = "Default",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:31:55"]={
+			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Maricon received 1x Fragment of Val'anyr",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:00"]={
+			["icon"] = addonTable.IconList["Flame Leviathan"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Flame Leviathan",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:01"]={
+			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Ignis the Furnace Master",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:02"]={
+			["icon"] = addonTable.IconList["Razorscale"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Razorscale",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:03"]={
+			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "XT-002 Deconstructor",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:04"]={
+			["icon"] = addonTable.IconList["Assembly of Iron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Assembly of Iron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:05"]={
+			["icon"] = addonTable.IconList["Kologarn"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Kologarn",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:06"]={
+			["icon"] = addonTable.IconList["Algalon the Observer"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Algalon the Observer",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:07"]={
+			["icon"] = addonTable.IconList["Auriaya"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Auriaya",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:08"]={
+			["icon"] = addonTable.IconList["Freya"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Freya",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:09"]={
+			["icon"] = addonTable.IconList["Thorim"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Thorim",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:10"]={
+			["icon"] = addonTable.IconList["Hodir"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Hodir",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:11"]={
+			["icon"] = addonTable.IconList["Mimiron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Mimiron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:12"]={
+			["icon"] = addonTable.IconList["General Vezax"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "General Vezax",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:13"]={
+			["icon"] = addonTable.IconList["Yogg-Saron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Yogg-Saron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+	}
+	
+	db_SI["2021-10-22"] = {
+		["12:31:45"] = {
+			["icon"] = addonTable.IconList["Default"],
+			["raidlead"] = "wulpho",
+			["reason"] = "Default",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:31:55"]={
+			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Maricon received 1x Fragment of Val'anyr",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:00"]={
+			["icon"] = addonTable.IconList["Flame Leviathan"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Flame Leviathan",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:01"]={
+			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Ignis the Furnace Master",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:02"]={
+			["icon"] = addonTable.IconList["Razorscale"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Razorscale",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:03"]={
+			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "XT-002 Deconstructor",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:04"]={
+			["icon"] = addonTable.IconList["Assembly of Iron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Assembly of Iron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:05"]={
+			["icon"] = addonTable.IconList["Kologarn"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Kologarn",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:06"]={
+			["icon"] = addonTable.IconList["Algalon the Observer"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Algalon the Observer",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:07"]={
+			["icon"] = addonTable.IconList["Auriaya"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Auriaya",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:08"]={
+			["icon"] = addonTable.IconList["Freya"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Freya",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:09"]={
+			["icon"] = addonTable.IconList["Thorim"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Thorim",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:10"]={
+			["icon"] = addonTable.IconList["Hodir"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Hodir",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:11"]={
+			["icon"] = addonTable.IconList["Mimiron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Mimiron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:12"]={
+			["icon"] = addonTable.IconList["General Vezax"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "General Vezax",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+		["12:32:13"]={
+			["icon"] = addonTable.IconList["Yogg-Saron"],
+			["raidlead"] = "wulphoqwe",
+			["reason"] = "Yogg-Saron",
+			["raid"] = {
+				"asda",
+				"assdda",
+				"aswerwera",
+				"asdfewda",
+				"assdrerrrrrda",
+			},
+		},
+	}
+end
+
+function addon:test_table_sort()
+	print("\n-")
+	local a_keys = {}
+	local a = {
+	   ["2021-10-23"] = {
+		  ["12:32:11"] = { a=1 },
+		  ["12:31:55"] = { a=1 },
+		  ["12:32:12"] = { a=1 },
+		  ["12:32:02"] = { a=1 },
+		  ["12:32:13"] = { a=1 },
+		  ["12:32:06"] = { a=1 },
+		  ["12:32:03"] = { a=1 },
+		  ["12:32:09"] = { a=1 },
+		  ["12:32:10"] = { a=1 },
+		  ["12:32:01"] = { a=1 },
+		  ["12:32:05"] = { a=1 },
+		  ["12:32:08"] = { a=1  },
+		  ["12:32:00"] = { a=1  },
+		  ["12:31:45"] = { a=1  },
+		  ["12:32:07"] = { a=1  },
+		  ["12:32:04"] = { a=1  }
+	   },
+	   ["2021-10-22"] = {
+		  ["18:31:55"] = { a=1  },
+		  ["18:31:45"] = { a=1 }
+	   }
+	}
+	
+	for k in pairs(a) do table.insert(a_keys, k) end
+	for _, k in ipairs(a_keys) do 
+		-- print(k, a[k]) 
+		print(k) 
+		local b = a[k]
+		for k2 in pairs(b) do 
+			print(" ",k2, b[k2]) 
+		end
+	end
+	
+	print(" split ---")
+	table.sort(a_keys)
+	
+	for _, k in ipairs(a_keys) do 
+		-- print(k, a[k]) 
+		print(k)
+		local b_keys = {}
+		local b = a[k]
+		for l in pairs(b) do table.insert(b_keys, l) end
+		table.sort(b_keys)
+		for _, k2 in ipairs(b_keys) do 
+			print(" ",k2, b[k2]) 
+		end
+	end
+	
+end
+
+function addon:TreeUpdate()
+	local num_1, num_2
+	local keys_1, keys_2
+	local current_date_tbl, current_time_tbl, Menu_Sub
+	-- Menu = {}
+	for k, v in pairs(Menu) do
+		Menu[k]=nil
+	end
+	
+	-- db_SI
+	keys_1 = {}
+	num_1 = 1
+	for k1 in pairs(db_SI) do table.insert(keys_1, k1) end -- fetch and store all "idx_date" keys
+	table.sort(keys_1) -- sort "idx_date" keys
+	for _, idx_date in ipairs(keys_1) do 
+		current_date_tbl = db_SI[idx_date] -- fetch table of current idx_date
+		Menu[num_1] = {}
+		Menu[num_1].value = idx_date
+		Menu[num_1].text = 	idx_date
+		Menu[num_1].table_ref = current_date_tbl
+		Menu[num_1].children = {}
+		Menu_Sub = Menu[num_1].children
+		num_1 = num_1 + 1
+		
+		keys_2 = {}
+		num_2 = 1
+		for k2 in pairs(current_date_tbl) do table.insert(keys_2, k2) end -- fetch and store all "idx_time" keys
+		table.sort(keys_2) -- sort "idx_time" keys
+		for _, idx_time in ipairs(keys_2) do 
+			current_time_tbl = current_date_tbl[idx_time] -- fetch table of current idx_time
+			Menu_Sub[num_2] = {}
+			Menu_Sub[num_2].value = idx_time
+			if current_time_tbl.icon == addonTable.IconList["Fragment of Val'anyr"] then
+				Menu_Sub[num_2].text = 	"|cffff9933"..tostring( idx_time ).."|r"
+			else
+				Menu_Sub[num_2].text = 	idx_time
+			end
+			Menu_Sub[num_2].icon = 	current_time_tbl.icon
+			Menu_Sub[num_2].table_ref = current_time_tbl
+			num_2 = num_2 + 1
+			
+		end
+	end
+	
+	self.db.global["MENU"] = Menu
+	selectTree:RefreshTree();
+	addon:PPrint("called addon:TreeUpdate()")
 	
 end
 
