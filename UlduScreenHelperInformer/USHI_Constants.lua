@@ -2,29 +2,31 @@
 
 local ADDON_NAME, addonTable = ...;
 
-addonTable.ADDON_NAME_LONG = 	"Ulduar Screenshot Helper & Informer"
-addonTable.ADDON_NAME_SHORT = 	"USHI"
-addonTable.ADDON_VERSION = 		"1.1"
+
 
 addonTable.setting_defaults = {
 	addon_active = true,
-	chat_output = true,
+	-- chat_output = true,
+	useChatFrame = 0, --default chat frame
+	outputEnable = 4, -- default to BOTH
+	chooseCreateScreenOn = 2, -- for selected bosses/trigger
+	chooseCreateEntryOn = 3, -- for every boss/trigger
 	screen_trigger = {
-		FlameLevi = false,
-		Ignis = false,
-		Razorscale = false,
-		XT002 = true,
-		AssemblyIron = false,
-		Kologarn = false,
-		Algalon = true,
-		Auriaya = false,
-		Freya = false,
-		Thorim = false,
-		Hodir = false,
-		Mimiron = false,
-		Vezax = false,
-		Yogg = true,
-		val_drop = true,
+		[L["BOSSNAME_FlameLeviathan"]] = nil,
+		[L["BOSSNAME_Ignis"]] = nil,
+		[L["BOSSNAME_Razorscale"]] = nil,
+		[L["BOSSNAME_XT002"]] = true,
+		[L["BOSSNAME_AssemblyIron"]] = nil,
+		[L["BOSSNAME_Kologarn"]] = nil,
+		[L["BOSSNAME_Algalon"]] = true,
+		[L["BOSSNAME_Auriaya"]] = nil,
+		[L["BOSSNAME_Freya"]] = nil,
+		[L["BOSSNAME_Thorim"]] = nil,
+		[L["BOSSNAME_Hodir"]] = nil,
+		[L["BOSSNAME_Mimiron"]] = nil,
+		[L["BOSSNAME_GeneralVezax"]] = nil,
+		[L["BOSSNAME_YoggSaron"]] = true,
+		[L["ITEMNAME_FragmentValanyr"]] = true,
 	},
 }
 
@@ -32,11 +34,26 @@ addonTable.setting_defaults = {
 --  ID-List of trackable Bosses  --
 -----------------------------------
 addonTable.BossIDList = {
-	[4076] = "Schabe",
-	[2110] = "Schwarze Ratte",
-	[721] = "Kaninchen Ratte",
-	[1412] = "Eichhörnchen",
-	[32498] = "Gletscherpinguin",
+	-- [4076] = "Schabe",
+	-- [2110] = "Schwarze Ratte",
+	-- [721] = "Kaninchen Ratte",
+	-- [1412] = "Eichhörnchen",
+	-- [32498] = "Gletscherpinguin",
+	
+    -- [34797] = "Icehowl",
+    -- [34780] = "Lord Jaraxxus",
+    -- [34564] = "Anub'arak",    
+    -- [31125] = "Archavon the Stone Watcher",
+    -- [33993] = "Emalon the Storm Watcher",
+    -- [35013] = "Koralon the Flame Watcher",
+    -- [38433] = "Toravon the Ice Watcher",
+    -- [1010818] = "Halion",
+    -- [40142] = "Halion",
+    -- [39863] = "Halion",
+    -- [39751] = "Baltharus",
+    -- [39899] = "Baltharus",
+    -- [39747] = "Saviana ",
+    -- [39746] = "Zarithrian ",
 
     [33113] = "Flame Leviathan",
     [33118] = "Ignis the Furnace Master",
@@ -51,13 +68,26 @@ addonTable.BossIDList = {
     [33288] = "Yogg-Saron",
         -- Algalon needs a bossyell - he doesn't die
 }
+
+addonTable.ItemIDList_SubZoneBoss = {
+	-- [29434] = "Emblem der Gerechtigkeit",
+	[47241] = "Emblem of Triumph",
+}
+addonTable.ItemIDList_Screenshot = {
+	[45038] = "Val'anyr Fragment",
+	-- [43102] = "Frozen Orb",
+	-- [36912] = "Saronite Ore",
+}
+
 addonTable.BossSubZoneList = {
+	[L["BOSSNAME_Steelbreaker"]] =  	L["ZONENAME_SubAssemblyIron"],
+	[L["BOSSNAME_RunemasterMolgeim"]] = L["ZONENAME_SubAssemblyIron"],
+	[L["BOSSNAME_StormcallerBrundir"]] = L["ZONENAME_SubAssemblyIron"],
+	
 	[L["BOSSNAME_Freya"]] =  L["ZONENAME_SubFreya"],
 	[L["BOSSNAME_Thorim"]] = L["ZONENAME_SubThorim"],
 	[L["BOSSNAME_Hodir"]] =  L["ZONENAME_SubHodir"],
 	[L["BOSSNAME_Mimiron"]] = L["ZONENAME_SubMimiron"],
-	-- ["Malygos"] = "Auge der Ewigkeit",
-	-- ["Kael'thas Sonnenwanderer"] = "Auge der Ewigkeit",
 }
 
 addonTable.IconList = {}
@@ -77,24 +107,3 @@ addonTable.IconList[L["BOSSNAME_Hodir"]] = 			"Interface\\Icons\\".."inv_sigil_h
 addonTable.IconList[L["BOSSNAME_Mimiron"]] = 		"Interface\\Icons\\".."inv_sigil_mimiron" --"achievement_boss_mimiron_01"
 addonTable.IconList[L["BOSSNAME_GeneralVezax"]] = 	"Interface\\Icons\\".."inv_misc_ahnqirajtrinket_05" --"achievement_boss_generalvezax_01"
 addonTable.IconList[L["BOSSNAME_YoggSaron"]] = 		"Interface\\Icons\\".."spell_shadow_shadesofdarkness" --"achievement_boss_yoggsaron_01"
-
-
-
-addonTable.ItemIDList_SubZoneBoss = {
-	-- [29434] = "Emblem der Gerechtigkeit",
-	[47241] = "Emblem of Triumph",
-}
-addonTable.ItemIDList_Screenshot = {
-	[45038] = "Val'anyr Fragment",
-	[43102] = "Frozen Orb",
-	-- [36912] = "Saronite Ore",
-}
-
-addonTable.ColorList = {
-	["WHITE"] =		"ff".."ffffff",
-	["BLACK"] =		"ff".."000000",
-	["GRAY"] =		"ff".."aaaaaa",
-	["BLUE"] =		"ff".."0000ff",
-	["BLUE_LIGHT"] ="ff".."44aaff",
-}
-
