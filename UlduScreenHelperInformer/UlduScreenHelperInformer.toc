@@ -1,0 +1,13 @@
+## Author: Telkar
+## Interface: 30300
+## Title: Ulduar Screenshot Helper & Informer
+## Notes: Makes screenshots in Ulduar
+## Version: 1.1
+## SavedVariables: USHI_DB
+
+embeds.xml
+locale.xml
+
+USHI_Constants.lua
+
+USHI_Main.lua
