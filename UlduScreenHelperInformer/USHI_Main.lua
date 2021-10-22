@@ -12,33 +12,30 @@ local tconcat, tostring, select = table.concat, tostring, select
 local ADDON_NAME, addonTable = ...;
 local defaults = 	addonTable.setting_defaults
 local BossIDList = 	addonTable.BossIDList
-local ItemIDList = 	addonTable.ItemIDList
+local ItemIDList = 	addonTable.ItemIDList_Screenshot
+local ItemIDList_SubZoneBoss = 	addonTable.ItemIDList_SubZoneBoss
 local ColorList = 	addonTable.ColorList
 local ADDON_NAME_LONG = 	addonTable.ADDON_NAME_LONG
 local ADDON_NAME_SHORT = 	addonTable.ADDON_NAME_SHORT
 local ADDON_VERSION = 		addonTable.ADDON_VERSION
 
 local debug_flag = true
-local ch_frame_3 = getglobal("ChatFrame".."3")
-local ch_frame_6 = getglobal("ChatFrame".."6")
+local debug_allInstances = true
+-- local ch_frame_3 = getglobal("ChatFrame".."3")
+-- local ch_frame_6 = getglobal("ChatFrame".."6")
 
 
 local db_options, db_char, db_SI
 local OptionsTable = {}
 -- local Options_SI = {}
+local SI_MenuTable = {}
 
 
-local bFrame
-local myGroup
-local selectTree
-local Menu
-local head
-local temp_ref
-
-local LockoutID_temp = nil
-local firstLogin = true
-local firstRaidRosterUpdate = true
+local LockoutID_key = nil
+local LockoutID_value = nil
+local firstLogin
 local isUlduRaid = false
+local isSubZoneBoss = nil
 
 local function DPrint(...)
 	-- DEFAULT_CHAT_FRAME:AddMessage( chatprefix..tostring(msg) )
@@ -52,6 +49,7 @@ local function DPrint(...)
 			n=n+1
 			tmp[n] = tostring(select(i, ...))
 		end
+		-- ch_frame_3:AddMessage( tconcat(tmp," ",1,n) )
 		DEFAULT_CHAT_FRAME:AddMessage( tconcat(tmp," ",1,n) )
 	end
 end
@@ -59,7 +57,7 @@ end
 function addon:OnInitialize()
     -- Called when the addon is loaded
 	addon:GetDB()
-	addon:test_fill_db_si()
+	-- addon:test_fill_db_si()
 	
     -- Register the options table
 	self:CreateOptionsTable()
@@ -70,23 +68,104 @@ function addon:OnInitialize()
 	-- self.optionsFrame = AceConfigDialog:AddToBlizOptions(MODNAME, nil, nil, "general")
 	self.optionsFrames.general = AceConfigDialog:AddToBlizOptions("USHI-Table-GENERAL", ADDON_NAME_SHORT)
 	
-	addon:testTree(ADDON_NAME_SHORT)
-	self.optionsFrames.screen_info = bFrame.frame
-	InterfaceOptions_AddCategory(self.optionsFrames.screen_info);
 	
-	-- temp_ref = self.optionsFrames.screen_info.obj.children[1].children[1].tree[1]
-	-- DPrint("optionsFrames.screen_info2.obj.children[1].children[1].tree[1]",temp_ref)
+	self.optionsFrames.screen_info = addon:makeOptionsTree(ADDON_NAME_SHORT)
+	-- self.optionsFrames.screen_info.refresh = addon:TreeUpdate; -- assign a refresh function
+	InterfaceOptions_AddCategory(self.optionsFrames.screen_info, ADDON_NAME_SHORT);
 	
 	
+	addon:TreeUpdate()
 	
+	local panel_option
+	print("screen_info")
+	panel_option = "name"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+	panel_option = "parent"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+	panel_option = "okay"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+	panel_option = "cancel"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+	panel_option = "default"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+	panel_option = "refresh"
+	print(panel_option,self.optionsFrames.screen_info[panel_option])
+end
+
+function addon:OnEnable()
+    -- Called when the addon is enabled
+	-- print(ADDON_NAME)
+	addon:PrintVersionState()
+	
+    addon:RegisterEvent("PLAYER_ENTERING_WORLD");
+    addon:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 	
 	-- Register slash commands
 	addon:RegisterChatCommand("ushi", "OnSlashCommand")
 end
 
+function addon:OnDisable()
+    -- Called when the addon is disabled
+	
+    addon:UnregisterEvent("UPDATE_INSTANCE_INFO") -- for checking the raid id
+	-- addon:UnregisterEvent("ADDON_LOADED");
+    addon:UnregisterEvent("CHAT_MSG_LOOT");
+    addon:UnregisterEvent("CHAT_MSG_SYSTEM");
+    addon:UnregisterEvent("CHAT_MSG_MONSTER_YELL");
+    addon:UnregisterEvent("CHAT_MSG_MONSTER_SAY");
+    -- addon:UnregisterEvent("CHAT_MSG_WHISPER");
+    addon:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+    addon:UnregisterEvent("PLAYER_ENTERING_WORLD");
+    -- addon:UnregisterEvent("RAID_INSTANCE_WELCOME")
+    addon:UnregisterEvent("RAID_ROSTER_UPDATE");
+    addon:UnregisterEvent("ZONE_CHANGED_NEW_AREA");
+end
 
-function addon:testTree(parent)
-	DPrint("called addon:testTree(parent)")
+local save_guid = nil
+function addon:OnSlashCommand(input)
+	-- DPrint("called the slash command!")
+	-- addon:TreeUpdate()
+	
+	if input then input = strlower(input) end
+	
+	-- Open About panel if there's no parameters or if we do /arl about
+	if not input or (input and input:trim() == "") or input == "i" or input == "info" then
+		DPrint("SLASH:","Screen Informant.")
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["screen_info"]) 
+	elseif (input == "o" or input == "options") then
+		DPrint("SLASH:","Options.")
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["general"]) 
+		
+	elseif (input == "gen" or input == "generate") then
+		DPrint("SLASH:","Generate Tree.")
+		addon:TreeUpdate()
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.screen_info) 
+	elseif (input == "test_instance") then
+		--
+		DPrint("SLASH:","test_instance")
+		addon:CHAT_MSG_SYSTEM(nil, INSTANCE_SAVED)
+	elseif (input == "test_screen") then
+		addon:ExecuteScreenshot("Loot", L["ITEMNAME_FragmentValanyr"], L["ITEMNAME_FragmentValanyr"]..": Wulpho")
+	elseif (input == "test_raid") then
+		local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML
+		
+		for i = 1,5 do -- getglobal("MAX_RAID_MEMBERS") do
+			name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i)
+			if name then
+				print(',[i]:', i, ',[name]:', name, ',[rank]:', rank, ',[subgroup]:', subgroup, ',[level]:', level, ',[class]:', class, ',[fileName]:', fileName, ',[zone]:', zone, ',[online]:', online, ',[isDead]:', isDead, ',[role]:', role, ',[isML]:', isML)
+			end
+		end
+	else
+		DPrint("SLASH:","Help.")
+	end
+end
+
+
+function addon:makeOptionsTree(parent)
+	DPrint("called addon:makeOptionsTree(parent)")
+	
+	
+	local bFrame, myGroup, selectTree, head, Menu
 
 	bFrame = AceGUI:Create("BlizOptionsGroup", "bFrame-Create");
 	myGroup = AceGUI:Create("ScrollFrame", "myGroup-Create");
@@ -115,30 +194,6 @@ function addon:testTree(parent)
 				}
 			}
 		},
-		{
-			text = "Selling",
-			value = "sell--value"
-		},
-		{
-			text="Exceptions",
-			value = "exclude-value"
-		},
-		{
-			text = "Bank",
-			value = "bank-value"
-		},
-		{
-			text = "Repair",
-			value = "repair-value"
-		},
-		{
-			text = "Misc",
-			value = "misc-value"
-		},
-		{
-			text = "About",
-			value = "about-value"
-		},
 	}
 	
 	-- tree widget
@@ -147,7 +202,6 @@ function addon:testTree(parent)
 	selectTree:SetLayout("List");
 	selectTree:SetTree(Menu);
 
-	
 
 	head:SetFullWidth(true);
 	head:SetText("test text header");
@@ -158,103 +212,187 @@ function addon:testTree(parent)
 		addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
 	end	)
 	
-	
 	myGroup:AddChild(selectTree);
 
 	bFrame:AddChild(myGroup);
 	
-	-- InterfaceOptions_AddCategory(bFrame.frame);
 	
+	for k,v in pairs(SI_MenuTable) do
+		SI_MenuTable[k] = nil
+	end
+	-- bFrame, myGroup, selectTree, head, Menu
+	SI_MenuTable.frame = bFrame.frame
+	SI_MenuTable.myGroup = myGroup
+	SI_MenuTable.selectTree = selectTree
+	SI_MenuTable.Menu = Menu
 	
-	self:RegisterChatCommand("ushi", "SlashCommandFunc")
+	return bFrame.frame -- return the frame for blizz options
 end
 
 function addon:TreeCallbackHandler(_widget, _event, _uniquevalue)
-
-	DPrint(" ")
-	DPrint("_widget",_widget);
-	DPrint("_event",_event);
-	local id_separat = {("\001"):split(_uniquevalue)}
+	local Menu = SI_MenuTable.Menu
+	local selectTree = SI_MenuTable.selectTree
+	local myGroup = SI_MenuTable.myGroup
 	
-	-- print("_uniquevalue",":",id_separat[1],",",id_separat[2])
-	DPrint(string.gsub(_uniquevalue,"\001"," , "));
+	local my_ref = _widget.tree
+	
+	-- DPrint("_widget",_widget);
+	-- DPrint("my_ref",my_ref);
+	local id_separat = {("\001"):split(_uniquevalue)}
+	-- DPrint(("\001"):split(_uniquevalue));
+	
+	-- container:ReleaseChildren() -- Release all child frames of this container.
+	selectTree:ReleaseChildren()
+	
+	if id_separat[1] and db_SI[id_separat[1]] then
+		-- The top level entry exists
+		if id_separat[2] and db_SI[id_separat[1]][id_separat[2]] then
+			-- if a 2nd level entry exists
+			local ref_table = db_SI[id_separat[1]][id_separat[2]];
+			
+			
+			local InlineGroup_header = AceGUI:Create("SimpleGroup")
+			selectTree:AddChild(InlineGroup_header)
+			
+			local Icon = AceGUI:Create("Icon")
+			Icon:SetImage(ref_table["icon"])
+			Icon:SetImageSize(30,30)
+			
+			local Label = AceGUI:Create("Label")
+			Label:SetText(ref_table["timestamp"].." ("..ref_table["ID"]..")\n"..ref_table["trigger-text"])
+			
+			InlineGroup_header:SetLayout("Flow")
+			Icon:SetRelativeWidth(0.12)
+			Label:SetRelativeWidth(0.88)
+			InlineGroup_header:AddChild(Icon)
+			InlineGroup_header:AddChild(Label)
+			
+			local MultiLineEditBox = AceGUI:Create("MultiLineEditBox")
+			MultiLineEditBox:SetFullWidth(true)
+			MultiLineEditBox:SetLabel(nil)
+			MultiLineEditBox:SetNumLines(20)
+			MultiLineEditBox:SetText(addon:formatRaidSummary(ref_table) )
+			selectTree:AddChild(MultiLineEditBox)
+			
+			local Button = AceGUI:Create("Button")
+			Button:SetText("Delete this entry")
+			selectTree:AddChild(Button)
+		else
+			-- if there is only the top level
+			DPrint("there is only the top level");
+			local ref_table = db_SI[id_separat[1]];
+			
+			local num_bosses = 0
+			local num_frags = 0
+			local raidlead = {}
+			local info_text=""
+			for k,v in pairs(ref_table) do
+				if ref_table[k]["trigger-type"] == "Loot" then num_frags = num_frags+1 end
+				if ref_table[k]["trigger-type"] == "Bosskill" then num_bosses = num_bosses+1 end
+				
+				raidlead[ref_table[k]["raidlead"]]=1
+			end
+			info_text = info_text.. "Raidweek: "..id_separat[1] .."\n"
+			info_text = info_text.. "Raidlead: "
+			for k,v in pairs(raidlead) do info_text = info_text.. k .." " end
+			info_text = info_text.."\n"
+			info_text = info_text.. "Bosses killed: "..num_bosses .."\n"
+			info_text = info_text.. "Fragments dropped: "..num_frags .."\n"
+			info_text = info_text.. "\n"
+			
+			local Label = AceGUI:Create("Label")
+			Label:SetText(info_text)
+			selectTree:AddChild(Label)
+			
+			local Button = AceGUI:Create("Button")
+			Button:SetText("Delete this Raidweek")
+			selectTree:AddChild(Button)
+		end
+	end
+	
+	
+	
+	-- local Icon = AceGUI:Create("Icon")
+	-- local MultiLineEditBox = AceGUI:Create("MultiLineEditBox")
+	
+	-- --container:AddChild(widget [, beforeWidget])
+	-- selectTree:AddChild
+	
 	
 	selectTree:RefreshTree();
 
 end
 
+function addon:formatRaidSummary(table_ref)
+	
+	return "tesrt\nsasdas"
+end
 
-local save_guid = nil
-function addon:OnSlashCommand(input)
-	-- DPrint("called the slash command!")
-	-- addon:TreeUpdate()
+
+
+function addon:TreeUpdate()
+	local num_1, num_2
+	local keys_1, keys_2
+	local current_weekID_tbl, current_time_tbl, Menu_Sub
+	local string_color
 	
-	if input then input = strlower(input) end
-	
-	-- Open About panel if there's no parameters or if we do /arl about
-	if not input or (input and input:trim() == "") or input == "i" or input == "info" then
-		DPrint("SLASH:","Screen Informant.")
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["screen_info"]) 
-	elseif (input == "o" or input == "options") then
-		DPrint("SLASH:","Options.")
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["general"]) 
-	elseif (input == "gen" or input == "generate") then
-		DPrint("SLASH:","Generate Tree.")
-		addon:TreeUpdate()
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames.screen_info) 
-	elseif (input == "unreg") then
-		--
-		DPrint("SLASH:","UnregisterEvent(CHAT_MSG_WHISPER.")
-		addon:UnregisterEvent("CHAT_MSG_WHISPER");
-	elseif (input == "test1") then
-		--
-		save_guid = UnitId("target")
-		DPrint("SLASH:","save_guid",save_guid)
-	elseif (input == "test2") then
-		--
-		DPrint("SLASH:","save_guid",UnitReaction("player",save_guid))
-	else
-		DPrint("SLASH:","Help.")
+	local Menu = SI_MenuTable.Menu
+	local selectTree = SI_MenuTable.selectTree
+	-- Menu = {}
+	for k, v in pairs(Menu) do
+		Menu[k]=nil
 	end
-end
-
-
-function addon:OnEnable()
-    -- Called when the addon is enabled
-	-- print(ADDON_NAME)
-	addon:PrintVersionState()
 	
-    addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- for checking the raid id
-	-- addon:RegisterEvent("ADDON_LOADED");
-    addon:RegisterEvent("CHAT_MSG_LOOT","CheckChatForLoot");
-    addon:RegisterEvent("CHAT_MSG_SYSTEM");
-    addon:RegisterEvent("CHAT_MSG_MONSTER_YELL");
-    addon:RegisterEvent("CHAT_MSG_MONSTER_SAY");
-    -- addon:RegisterEvent("CHAT_MSG_WHISPER");
-    addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-    addon:RegisterEvent("PLAYER_ENTERING_WORLD");
-    addon:RegisterEvent("RAID_INSTANCE_WELCOME")
-    addon:RegisterEvent("RAID_ROSTER_UPDATE");
+	-- db_SI
+	keys_1 = {}
+	num_1 = 1
+	for k1 in pairs(db_SI) do table.insert(keys_1, k1) end -- fetch and store all "idx_weekID" keys
+	table.sort(keys_1, function(a,b) return a>b end) -- sort "idx_weekID" keys
+	for _, idx_weekID in ipairs(keys_1) do 
+		current_weekID_tbl = db_SI[idx_weekID] -- fetch table of current idx_weekID
+		Menu[num_1] = {}
+		Menu[num_1].value = idx_weekID
+		Menu[num_1].text = 	idx_weekID
+		Menu[num_1].table_ref = current_weekID_tbl
+		Menu[num_1].children = {}
+		Menu_Sub = Menu[num_1].children
+		num_1 = num_1 + 1
+		
+		keys_2 = {}
+		num_2 = 1
+		for k2 in pairs(current_weekID_tbl) do table.insert(keys_2, k2) end -- fetch and store all "idx_time" keys
+		table.sort(keys_2, function(a,b) return a>b end) -- sort "idx_time" keys
+		for _, idx_time in ipairs(keys_2) do 
+			current_time_tbl = current_weekID_tbl[idx_time] -- fetch table of current idx_time
+			
+			string_color = nil -- default assignment: no color change of text
+			if current_time_tbl.icon == addonTable.IconList[L["ITEMNAME_FragmentValanyr"]] then
+				string_color = "FFff9933"	-- make fragments orange (legendary)
+			elseif current_time_tbl.icon == addonTable.IconList[L["BOSSNAME_Algalon"]] then
+				string_color = "FF3fc7eb"	-- make Algalon light-blue (mage)
+			elseif current_time_tbl.icon == addonTable.IconList[L["BOSSNAME_YoggSaron"]] then
+				string_color = "FFb048f8"	-- make Yogg-Saron purple (epic)
+			end
+			
+			Menu_Sub[num_2] = {}
+			if string_color then
+				Menu_Sub[num_2].text = 	"|c"..string_color..tostring( idx_time ).."|r"
+			else
+				Menu_Sub[num_2].text = 	tostring(idx_time)
+			end
+			Menu_Sub[num_2].value = idx_time
+			Menu_Sub[num_2].icon = 	current_time_tbl.icon
+			Menu_Sub[num_2].table_ref = current_time_tbl
+			num_2 = num_2 + 1
+			
+		end
+	end
 	
-	addon:FetchLockoutID() -- try to fetch the raid id, if already exists
-end
-
-function addon:OnDisable()
-    -- Called when the addon is disabled
+	-- self.db.global["MENU"] = Menu
+	selectTree:RefreshTree();
+	DPrint("called addon:TreeUpdate()")
 	
-    addon:UnregisterEvent("UPDATE_INSTANCE_INFO") -- for checking the raid id
-	-- addon:UnregisterEvent("ADDON_LOADED");
-    addon:UnregisterEvent("CHAT_MSG_LOOT");
-    addon:UnregisterEvent("CHAT_MSG_SYSTEM");
-    addon:UnregisterEvent("CHAT_MSG_MONSTER_YELL");
-    addon:UnregisterEvent("CHAT_MSG_MONSTER_SAY");
-    -- addon:UnregisterEvent("CHAT_MSG_WHISPER");
-    addon:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-    addon:UnregisterEvent("PLAYER_ENTERING_WORLD");
-    addon:UnregisterEvent("RAID_INSTANCE_WELCOME")
-    addon:UnregisterEvent("RAID_ROSTER_UPDATE");
 end
-
 
 function addon:PrintVersionState()
 	local addon_state
@@ -481,458 +619,66 @@ function addon:test_fill_db_si()
 	for k, v in pairs(db_SI) do
 		db_SI[k]=nil
 	end
-	-- year, week, id
 	
-	db_SI["2021 W40: 512"] = {
-		["10.01. 12:31:45"] = {
-			["icon"] = addonTable.IconList["Default"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulpho",
-			["reason"] = "Default",
+	db_SI["2021 W42: 2343"] = {
+		["2021-10-15 21:33:44"] = {
+			["trigger-type"] = "Bosskill",
+			["trigger-text"] = "XT-002 Dekonstruktor",
+			["raidlead"] = "Sareiha",
+			["ID"] = 2343,
+			["timestamp"] = "2021-10-15 21:33:20",
+			["icon"] = "Interface\\Icons\\spell_brokenheart",
 			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
+				["GROUP2"] = {
+					"Ereanor (Offline)", -- [1]
+				},
+				["GROUP1"] = {
+					"Sareiha", -- [1]
+				},
+				["GROUP6"] = {
+					"asdfsdsd", -- [1]
+					"Ereserrgrdanor (Offline)", -- [2]
+				},
 			},
 		},
-		["10.01. 12:31:55"]={
-			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Maricon received 1x Fragment of Val'anyr",
+		["2021-10-15 21:33:20"] = {
+			["trigger-type"] = "Loot",
+			["trigger-text"] = "Fragment von Val'anyr: Wulpho",
+			["raidlead"] = "Sareiha",
+			["ID"] = 2343,
+			["timestamp"] = "2021-10-15 21:33:20",
+			["icon"] = "Interface\\Icons\\inv_ingot_titansteel_red",
 			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
+				["GROUP2"] = {
+					"Ereanor (Offline)", -- [1]
+				},
+				["GROUP1"] = {
+					"Sareiha", -- [1]
+				},
+				["GROUP6"] = {
+					"asdfsdsd", -- [1]
+					"Ereserrgrdanor (Offline)", -- [2]
+				},
 			},
 		},
-		["10.01. 12:32:00"]={
-			["icon"] = addonTable.IconList["Flame Leviathan"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Flame Leviathan",
+		["2021-10-15 21:33:55"] = {
+			["trigger-type"] = "Bosskill",
+			["trigger-text"] = "Hodir",
+			["raidlead"] = "Sareiha",
+			["ID"] = 2343,
+			["timestamp"] = "2021-10-15 21:33:20",
+			["icon"] = "Interface\\Icons\\inv_sigil_hodir",
 			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:01"]={
-			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Ignis the Furnace Master",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:02"]={
-			["icon"] = addonTable.IconList["Razorscale"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Razorscale",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:03"]={
-			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "XT-002 Deconstructor",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:04"]={
-			["icon"] = addonTable.IconList["Assembly of Iron"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Assembly of Iron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:05"]={
-			["icon"] = addonTable.IconList["Kologarn"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Kologarn",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:06"]={
-			["icon"] = addonTable.IconList["Algalon the Observer"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Algalon the Observer",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:07"]={
-			["icon"] = addonTable.IconList["Auriaya"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Auriaya",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:08"]={
-			["icon"] = addonTable.IconList["Freya"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Freya",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:09"]={
-			["icon"] = addonTable.IconList["Thorim"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Thorim",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:10"]={
-			["icon"] = addonTable.IconList["Hodir"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Hodir",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:11"]={
-			["icon"] = addonTable.IconList["Mimiron"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Mimiron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:12"]={
-			["icon"] = addonTable.IconList["General Vezax"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "General Vezax",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.01. 12:32:13"]={
-			["icon"] = addonTable.IconList["Yogg-Saron"],
-			["ID"] = 512,
-			["timestamp"] = "2021-10-01 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Yogg-Saron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-	}
-	
-	db_SI["2021 W42: 2345"] = {
-		["10.24. 12:31:45"] = {
-			["icon"] = addonTable.IconList["Default"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:31:55",
-			["raidlead"] = "wulpho",
-			["reason"] = "Default",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:31:55"]={
-			["icon"] = addonTable.IconList["Fragment of Val'anyr"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:31:55",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Maricon received 1x Fragment of Val'anyr",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:00"]={
-			["icon"] = addonTable.IconList["Flame Leviathan"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:00",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Flame Leviathan",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:01"]={
-			["icon"] = addonTable.IconList["Ignis the Furnace Master"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:01",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Ignis the Furnace Master",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:02"]={
-			["icon"] = addonTable.IconList["Razorscale"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:02",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Razorscale",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:03"]={
-			["icon"] = addonTable.IconList["XT-002 Deconstructor"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:03",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "XT-002 Deconstructor",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:04"]={
-			["icon"] = addonTable.IconList["Assembly of Iron"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:04",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Assembly of Iron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:05"]={
-			["icon"] = addonTable.IconList["Kologarn"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:05",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Kologarn",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:06"]={
-			["icon"] = addonTable.IconList["Algalon the Observer"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:06",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Algalon the Observer",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:07"]={
-			["icon"] = addonTable.IconList["Auriaya"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:07",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Auriaya",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:08"]={
-			["icon"] = addonTable.IconList["Freya"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:08",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Freya",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:09"]={
-			["icon"] = addonTable.IconList["Thorim"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:09",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Thorim",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:10"]={
-			["icon"] = addonTable.IconList["Hodir"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:10",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Hodir",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:11"]={
-			["icon"] = addonTable.IconList["Mimiron"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:11",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Mimiron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:12"]={
-			["icon"] = addonTable.IconList["General Vezax"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:12",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "General Vezax",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
-			},
-		},
-		["10.24. 12:32:13"]={
-			["icon"] = addonTable.IconList["Yogg-Saron"],
-			["ID"] = 2345,
-			["timestamp"] = "2021-10-24 12:32:13",
-			["raidlead"] = "wulphoqwe",
-			["reason"] = "Yogg-Saron",
-			["raid"] = {
-				"asda",
-				"assdda",
-				"aswerwera",
-				"asdfewda",
-				"assdrerrrrrda",
+				["GROUP2"] = {
+					"Ereanor (Offline)", -- [1]
+				},
+				["GROUP1"] = {
+					"Sareiha", -- [1]
+				},
+				["GROUP6"] = {
+					"asdfsdsd", -- [1]
+					"Ereserrgrdanor (Offline)", -- [2]
+				},
 			},
 		},
 	}
@@ -940,114 +686,68 @@ end
 
 
 
-function addon:TreeUpdate()
-	local num_1, num_2
-	local keys_1, keys_2
-	local current_weekID_tbl, current_time_tbl, Menu_Sub
-	local string_color
-	
-	-- Menu = {}
-	for k, v in pairs(Menu) do
-		Menu[k]=nil
-	end
-	
-	-- db_SI
-	keys_1 = {}
-	num_1 = 1
-	for k1 in pairs(db_SI) do table.insert(keys_1, k1) end -- fetch and store all "idx_weekID" keys
-	table.sort(keys_1, function(a,b) return a>b end) -- sort "idx_weekID" keys
-	for _, idx_weekID in ipairs(keys_1) do 
-		current_weekID_tbl = db_SI[idx_weekID] -- fetch table of current idx_weekID
-		Menu[num_1] = {}
-		Menu[num_1].value = idx_weekID
-		Menu[num_1].text = 	idx_weekID
-		Menu[num_1].table_ref = current_weekID_tbl
-		Menu[num_1].children = {}
-		Menu_Sub = Menu[num_1].children
-		num_1 = num_1 + 1
-		
-		keys_2 = {}
-		num_2 = 1
-		for k2 in pairs(current_weekID_tbl) do table.insert(keys_2, k2) end -- fetch and store all "idx_time" keys
-		table.sort(keys_2, function(a,b) return a>b end) -- sort "idx_time" keys
-		for _, idx_time in ipairs(keys_2) do 
-			current_time_tbl = current_weekID_tbl[idx_time] -- fetch table of current idx_time
-			
-			string_color = nil -- default assignment: no color change of text
-			if current_time_tbl.icon == addonTable.IconList["Fragment of Val'anyr"] then
-				string_color = "FFff9933"	-- make fragments orange (legendary)
-			elseif current_time_tbl.icon == addonTable.IconList["Algalon the Observer"] then
-				string_color = "FF3fc7eb"	-- make Algalon light-blue (mage)
-			elseif current_time_tbl.icon == addonTable.IconList["Yogg-Saron"] then
-				string_color = "FFb048f8"	-- make Yogg-Saron purple (epic)
-			end
-			
-			Menu_Sub[num_2] = {}
-			if string_color then
-				Menu_Sub[num_2].text = 	"|c"..string_color..tostring( idx_time ).."|r"
-			else
-				Menu_Sub[num_2].text = 	tostring(idx_time)
-			end
-			Menu_Sub[num_2].value = idx_time
-			Menu_Sub[num_2].icon = 	current_time_tbl.icon
-			Menu_Sub[num_2].table_ref = current_time_tbl
-			num_2 = num_2 + 1
-			
-		end
-	end
-	
-	self.db.global["MENU"] = Menu
-	selectTree:RefreshTree();
-	DPrint("called addon:TreeUpdate()")
-	
-end
 
 
-function addon:FetchLockoutID()
-	-- only try if we dont have the id grabbed yet
-	if not LockoutID_temp then 
-		RequestRaidInfo()	-- we need to call for [RequestRaidInfo], rest is handled in the UPDATE_INSTANCE_INFO event handler
-	end 
-end
 
 
 
 
 function addon:CheckIfUlduRaid()
-    if (GetNumRaidMembers() == 0) then
-		addon:setUlduRaid(false)
+	DPrint("addon:CheckIfUlduRaid()")
+	
+	-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
+	local instanceName, instanceType, _, _, maxPlayers = GetInstanceInfo()
+	
+	-- if (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and (maxPlayers==25 or maxPlayers>0) then --DEBUG ignore raid size for now (at least >0)
+	if ( (instanceName==L["ZONENAME_Ulduar"]) and (maxPlayers==25) ) or (debug_allInstances and maxPlayers > 0) then
+		addon:setUlduRaid(true)
 	else
-		-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
-		local instanceName, instanceType, _, _, maxPlayers = GetInstanceInfo()
-		
-		-- if (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and (maxPlayers==25 or maxPlayers>0) then --DEBUG ignore raid size for now (at least >0)
-		if (instanceName==L["ZONENAME_Ulduar"]) and (maxPlayers==25) then
-			addon:FetchLockoutID()
-			addon:setUlduRaid(true)
-		else
-			addon:setUlduRaid(false)
-		end
+		addon:setUlduRaid(false)
 	end
 end
 
 
-
-
 function addon:setUlduRaid(new_state)
-	isUlduRaid = new_state
-	DPrint("isUlduRaid", tostring(isUlduRaid) )
+	if (not isUlduRaid) and (new_state) then -- set from 0 to 1
+		isUlduRaid = new_state 
+		DPrint("isUlduRaid", "|cff0077ff"..tostring(isUlduRaid) .."|r")
+		
+		addon:RegisterEvent("CHAT_MSG_LOOT");
+		addon:RegisterEvent("CHAT_MSG_SYSTEM");
+		addon:RegisterEvent("CHAT_MSG_MONSTER_YELL");
+		-- addon:RegisterEvent("CHAT_MSG_MONSTER_SAY");
+		addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+	elseif (isUlduRaid) and (not new_state)  then -- set from 1 to 0
+		isUlduRaid = new_state
+		DPrint("isUlduRaid", "|cffffff00"..tostring(isUlduRaid) .."|r")
+		
+		addon:UnregisterEvent("CHAT_MSG_LOOT");
+		addon:UnregisterEvent("CHAT_MSG_SYSTEM");
+		addon:UnregisterEvent("CHAT_MSG_MONSTER_YELL");
+		-- addon:UnregisterEvent("CHAT_MSG_MONSTER_SAY");
+		addon:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+	end
 end
 
 -- ********************************************************
 -- ** Functions for Registered Events
 -- ********************************************************
 
+local INSTANCE_SAVED = getglobal("INSTANCE_SAVED") -- You are now saved to this instances.
+function addon:CHAT_MSG_SYSTEM(event, msg)
+    if isUlduRaid and tostring(msg) == INSTANCE_SAVED then
+		DPrint("CHAT_MSG_SYSTEM - INSTANCE_SAVED in Uldu")
+		addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- Register to fetch the Raid ID
+        RequestRaidInfo()
+    end
+end
+
 function addon:UPDATE_INSTANCE_INFO()
     -- Fired when data from [RequestRaidInfo] is available. 
 	DPrint("addon:UPDATE_INSTANCE_INFO")
 	
 	-- only try if we are in uldu raid and we have not grabbed lockout id yet
-	if isUlduRaid and not LockoutID_temp then 
+	if not LockoutID_key then 
 	
 		local index, reset_time, reset_date, reset_week
 		local instanceName, instanceID, instanceResetSeconds, instanceDifficulty, locked, isRaid, maxPlayers
@@ -1059,89 +759,94 @@ function addon:UPDATE_INSTANCE_INFO()
 				reset_date = date("*t", reset_time) -- turn to table {year = 1998, month = 9, day = 16, yday = 259, wday = 4, hour = 23, min = 48, sec = 10, isdst = false}
 				reset_week = math.ceil( reset_date.yday / 7 ) -- take the year-day and divide by 7 to get the calendar-week-number
 				-- string raid id: YEAR, WEEK, ID
-				LockoutID_temp = tostring(reset_date.year)..","..tostring(reset_week)..","..tostring(instanceID)
-				DPrint("LockoutID_temp",LockoutID_temp)
+				LockoutID_value = instanceID
+				LockoutID_key = string.format("%d W%02d: %d", reset_date.year, reset_week, instanceID) -- tostring(reset_date.year)..","..tostring(reset_week)..","..tostring(instanceID)
+				DPrint("LockoutID_key",LockoutID_key)
+				
+				addon:UnregisterEvent("UPDATE_INSTANCE_INFO") -- we have the LockoutID_key, we stop looking for the IDs
+				addon:UnregisterEvent("CHAT_MSG_SYSTEM")
 				break;
 			end
 		end -- for index=1,GetNumSavedInstances
 		
-	end -- if not LockoutID_temp
+	end -- if not LockoutID_key
 end
 
-local INSTANCE_SAVED = _G["INSTANCE_SAVED"]
-function addon:CHAT_MSG_SYSTEM(event, msg)
-    -- You are now saved to this instances.
-    -- Refresh RaidInfo
-    if tostring(msg) == INSTANCE_SAVED then
-		DPrint("CHAT_MSG_SYSTEM - INSTANCE_SAVED")
-        RequestRaidInfo()
-    end
-end
 
-function addon:CHAT_MSG_MONSTER_YELL(event,...)
-	DPrint("CHAT_MSG_MONSTER_YELL")
-	args = {...}
+function addon:CHAT_MSG_MONSTER_YELL(event, textMonster, nameMonster)
+	DPrint("CHAT_MSG_MONSTER_YELL", nameMonster)
 	
-	local myPayload = ""
-	for k, v in pairs(args) do
-		myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
+	-- isSubZoneBoss
+	if addonTable.BossSubZoneList[nameMonster] then
+		-- DPrint(nameMonster, "is a SubZoneBoss.")
+		if addonTable.BossSubZoneList[nameMonster] == GetSubZoneText() then
+			isSubZoneBoss = nameMonster
+			-- DPrint(addonTable.BossSubZoneList[nameMonster], "is the correct SubZone. - SUCCESS")
+		end
+	else
+		isSubZoneBoss = nil
 	end
-	DPrint(myPayload)
 end
 
-function addon:CHAT_MSG_MONSTER_SAY(event,...)
-	DPrint("CHAT_MSG_MONSTER_SAY")
-	args = {...}
+function addon:CHAT_MSG_MONSTER_SAY(event, textMonster, nameMonster)
+	DPrint("CHAT_MSG_MONSTER_SAY", nameMonster)
 	
-	local myPayload = ""
-	for k, v in pairs(args) do
-		myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
-	end
-	DPrint(myPayload)
-end
-
-function addon:RAID_INSTANCE_WELCOME()
-	DPrint("addon:RAID_INSTANCE_WELCOME")
-	
-	-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
-	local instanceName, instanceType, _, _, maxPlayers = GetInstanceInfo()
-	DPrint(instanceName, maxPlayers)
-	
-	addon:CheckIfUlduRaid()
+	-- args = {...}
+	-- local myPayload = ""
+	-- for k, v in pairs(args) do
+		-- myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
+	-- end
+	-- DPrint(myPayload)
 end
 
 
 function addon:PLAYER_ENTERING_WORLD(...)
 	DPrint("addon:PLAYER_ENTERING_WORLD")
-	if firstLogin then
-		firstLogin = false -- check only once
-		addon:CheckIfUlduRaid()
+	if not firstLogin then
+		firstLogin = true -- check only once
+		-- addon:CheckIfUlduRaid()
+		-- self:CancelAllTimers()
+		self:ScheduleTimer("CheckIfUlduRaid", 3) -- wait 3 secs after changing zones
+		
+		addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- Register to fetch the Raid ID
+        RequestRaidInfo()
+		
+		self:ScheduleTimer("UnregisterEvent", 2, "UPDATE_INSTANCE_INFO") -- unregister event after 2 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
 	end
+end
+
+
+function addon:ZONE_CHANGED_NEW_AREA(...)
+	DPrint("addon:ZONE_CHANGED_NEW_AREA")
+	
+	self:CancelAllTimers()
+	self:ScheduleTimer("CheckIfUlduRaid", 3) -- wait 3 secs after changing zones
+	
+	-- if in raid, check if ulduar
+	-- if (GetNumRaidMembers() > 0) then
+		-- local zoneName = GetRealZoneText()
+		-- local zoneId = GetCurrentMapAreaID()
+		-- DPrint(zoneName,zoneId)
+	-- end
 end
 
 
 function addon:RAID_ROSTER_UPDATE(...)
 	DPrint("addon:RAID_ROSTER_UPDATE")
 	
-	
-    if firstRaidRosterUpdate then
-		firstRaidRosterUpdate = false -- call only once
-		addon:CheckIfUlduRaid()
-    end
 end
 
 
 function addon:COMBAT_LOG_EVENT_UNFILTERED(eventname, ...)
     local _, combatEvent, _, _, _, destGUID, destName = ...;
-	
     
     if (combatEvent == "UNIT_DIED" or combatEvent == "UNIT_DESTROYED") then
-        local NPCID = MRT_GetNPCID(destGUID);
+        local NPCID = addon:GetNPCID(destGUID);
         if (NPCID and BossIDList[NPCID]) then
-            -- MRT_AddBosskill(destName);
-			self:PPrint(combatEvent..": ("..NPCID..")",destName)
+			-- mark boss as killed
+			DPrint(destName.." ("..tostring(NPCID)..") is dead", combatEvent); 
+			addon:ExecuteScreenshot("Bosskill", destName, destName)
         end
-		
     end
 end
 
@@ -1150,29 +855,43 @@ end
 --  loot tracking functions  --
 -------------------------------
 -- track loot based on chatmessage recognized by event CHAT_MSG_LOOT
-function addon:CheckChatForLoot(eventname, chatmsg)
+function addon:CHAT_MSG_LOOT(eventname, chatmsg)
     -- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
+	local player_received = false
 	
     -- first try: somebody else recieved multiple loot (most parameters)
     local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
+	-- if playerName then DPrint("somebody else recieved multiple loot.") end
+	
     -- next try: somebody else recieved single loot
     if (playerName == nil) then
         itemCount = 1;
         playerName, itemLink = deformat(chatmsg, LOOT_ITEM);
+		-- if playerName then DPrint("somebody else recieved single loot.") end
     end
+	
     -- if player == nil, then next try: player recieved multiple loot
     if (playerName == nil) then
         playerName = UnitName("player");
         itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_SELF_MULTIPLE);
+		if itemLink then 
+			-- DPrint("player recieved multiple loot.") 
+			player_received = true
+		end
     end
+	
     -- if itemLink == nil, then last try: player recieved single loot
     if (itemLink == nil) then
         itemCount = 1;
         itemLink = deformat(chatmsg, LOOT_ITEM_SELF);
+		if itemLink then 
+			-- DPrint("player recieved single loot.") 
+			player_received = true
+		end
     end
     -- if itemLink == nil, then there was neither a LOOT_ITEM, nor a LOOT_ITEM_SELF message
     if (itemLink == nil) then 
-        -- MRT_Debug("No valid lootevent recieved."); 
+        -- DPrint("No valid lootevent recieved."); 
         return; 
     end
 	
@@ -1185,50 +904,88 @@ function addon:CheckChatForLoot(eventname, chatmsg)
     local _, _, itemColor, _, itemId, _, _, _, _, _, _, _, _, itemName = string.find(itemLink, "|?c?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?");
     -- make the string a number
     itemId = tonumber(itemId);
-    -- if major fuckup in first strip:
-    -- if (itemString == nil) then MRT_Debug("ItemLink corrupted - no ItemString found."); return; end
-    -- if major fuckup in second strip:
-    -- if (itemId == nil) then MRT_Debug("ItemLink corrupted - no ItemId found."); return; end
 	
-    -- check options, if this item should be tracked (if not in list, then stop)
-    if not (ItemIDList[itemId]) then return; end
+	-- IF we have a subzoneboss AND player received loot AND the loot indicates victory
+	if isSubZoneBoss and player_received and ItemIDList_SubZoneBoss[itemId] then
+		-- mark boss as killed
+		DPrint(isSubZoneBoss, "is (presumably) defeated."); 
+		addon:ExecuteScreenshot("Bosskill", isSubZoneBoss, isSubZoneBoss)
+		
+		isSubZoneBoss = nil -- reset subzoneboss tracking
+	end
 	
-    -- if code reach this point, we should have valid item information, an active raid and at least one bosskill entry - make a table!
-    -- Note: If a CT-Raidtracker-compatible export need more iteminfo, check GetItemInfo() for more data
-    local MRT_LootInfo = {
-        ["ItemLink"] = itemLink,
-        ["ItemString"] = itemString,
-        ["ItemId"] = itemId,
-        ["ItemName"] = itemName,
-        ["ItemColor"] = itemColor,
-        ["ItemCount"] = itemCount,
-        ["Looter"] = playerName,
-        -- ["DKPValue"] = 0,
-        -- ["BossNumber"] = MRT_NumOfLastBoss,
-        ["Time"] = time(),
-    }
-    -- tinsert(MRT_RaidLog[MRT_NumOfCurrentRaid]["Loot"], MRT_LootInfo);
-    -- if (not MRT_Options["Tracking_AskForDKPValue"]) then return; end
-    -- if (MRT_Options["Tracking_MinItemQualityToGetDKPValue"] > MRT_ItemColorValues[itemColor]) then return; end
-    -- MRT_DKPFrame_AddToItemCostQueue(MRT_NumOfCurrentRaid, #MRT_RaidLog[MRT_NumOfCurrentRaid]["Loot"]);
-	
-	self:PPrint(playerName.." received "..itemCount.."x "..itemLink..".")
-	-- self:Print(playerName.." received "..itemCount.."x "..itemLink..".")
-	Screenshot()
-	
+	-- IF the received item is on the list of screenshot items
+	if (ItemIDList[itemId]) then
+		DPrint(playerName.." received "..itemCount.."x "..itemLink..".")
+		addon:ExecuteScreenshot("Loot", itemName, itemName..": "..playerName)
+		
+	end
 end
 
-----------------------------------
---  Iron Council Instancecheck  -- stolen from mizuki raidtracker
-----------------------------------
-function addon:IsInstanceUlduar(boss)
-    local instanceInfoName = GetInstanceInfo();
-    if (instanceInfoName == L["ZONENAME_Ulduar"]) then
-        return boss;
-    else
-        return nil;
-    end
+
+function addon:ExecuteScreenshot(trigger_type, reason_raw, reason_detail)
+	local t_now = date("*t", time())
+	local time_stamp = string.format("%d-%02d-%02d %02d:%02d:%02d", t_now.year, t_now.month, t_now.day, t_now.hour, t_now.min, t_now.sec)
+	-- self:CancelAllTimers()
+	-- addon:PPrint(time_stamp.." "..reason_detail)
+	self:ScheduleTimer("PPrint", 0.2, time_stamp.." "..reason_detail)
+	addon:RWPrint(time_stamp.."\n"..reason_detail)
+	self:ScheduleTimer(Screenshot, 0.5)
+	
+	addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
 end
+
+function addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
+	if LockoutID_key then
+		if not db_SI[LockoutID_key] then db_SI[LockoutID_key] = {} end
+		db_SI[LockoutID_key][time_stamp] = {
+			["icon"] = addonTable.IconList["Default"],
+			["timestamp"] = time_stamp,
+			["ID"] = LockoutID_value,
+			["trigger-type"] = trigger_type,
+			["trigger-text"] = reason_detail,
+			["raid"] = {}
+		}
+		if addonTable.IconList[reason_raw] then
+			db_SI[LockoutID_key][time_stamp]["icon"] = addonTable.IconList[reason_raw]
+		end
+		
+		local name, rank, subgroup, online, isML
+		for i = 1, getglobal("MAX_RAID_MEMBERS") do
+			name, rank, subgroup, _, _, _, _, online = GetRaidRosterInfo(i)
+			if name then
+				-- print(',[i]:', i, ',[name]:', name, ',[rank]:', rank, ',[subgroup]:', subgroup, ',[level]:', level, ',[class]:', class, ',[fileName]:', fileName, ',[zone]:', zone, ',[online]:', online, ',[isDead]:', isDead, ',[role]:', role, ',[isML]:', isML)
+				if not db_SI[LockoutID_key][time_stamp]["raid"]["GROUP"..subgroup] then db_SI[LockoutID_key][time_stamp]["raid"]["GROUP"..subgroup] = {} end
+				if online then
+					table.insert(db_SI[LockoutID_key][time_stamp]["raid"]["GROUP"..subgroup], name)
+				else
+					table.insert(db_SI[LockoutID_key][time_stamp]["raid"]["GROUP"..subgroup], name.." (Offline)")
+				end
+				if rank == 2 then
+					db_SI[LockoutID_key][time_stamp]["raidlead"] = name
+				end
+			end
+		end
+		-- db_SI[LockoutID_key][time_stamp] = {
+			-- -- ["icon"] = addonTable.IconList["Default"],
+			-- -- ["ID"] = 512,
+			-- -- ["timestamp"] = time_stamp,
+			-- ["raidlead"] = "wulpho",
+			-- -- ["reason"] = reason_detail,
+			-- ["raid"] = {
+				-- "asda",
+				-- "assdda",
+				-- "aswerwera",
+				-- "asdfewda",
+				-- "assdrerrrrrda",
+			-- },
+		-- }
+	end -- if LockoutID_key
+end
+
+
+
+
 
 function addon:GetCurrentTime()
     if MRT_Options["Tracking_UseServerTime"] then
@@ -1263,7 +1020,21 @@ function addon:PPrint(...)
 		n=n+1
 		tmp[n] = tostring(select(i, ...))
 	end
-	ch_frame_3:AddMessage( tconcat(tmp," ",1,n) )
+	-- ch_frame_3:AddMessage( tconcat(tmp," ",1,n) )
 	-- ch_frame_6:AddMessage( tconcat(tmp," ",1,n) )
 	DEFAULT_CHAT_FRAME:AddMessage( tconcat(tmp," ",1,n) )
+end
+
+function addon:RWPrint(...)
+	local tmp={}
+	local n=1
+	tmp[n] = "|cff33ff99"..tostring( ADDON_NAME_SHORT ).."|r:"
+	
+	for i=1, select("#", ...) do
+		n=n+1
+		tmp[n] = tostring(select(i, ...))
+	end
+	
+	-- DEFAULT_CHAT_FRAME:AddMessage( tconcat(tmp," ",1,n) )
+	RaidNotice_AddMessage(RaidWarningFrame, table.concat(tmp," ",1,n), ChatTypeInfo["SAY"]);
 end
