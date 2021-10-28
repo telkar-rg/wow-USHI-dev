@@ -19,8 +19,8 @@ local ADDON_NAME_LONG = 	addonTable.ADDON_NAME_LONG
 local ADDON_NAME_SHORT = 	addonTable.ADDON_NAME_SHORT
 local ADDON_VERSION = 		addonTable.ADDON_VERSION
 
-local debug_flag = true
-local debug_allInstances = true
+local debug_flag = false
+local debug_allInstances = false
 -- local ch_frame_3 = getglobal("ChatFrame".."3")
 -- local ch_frame_6 = getglobal("ChatFrame".."6")
 
@@ -126,7 +126,7 @@ function addon:setAddonActive()
 		addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- Register to fetch the Raid ID
         RequestRaidInfo()
 		
-		-- self:ScheduleTimer("UnregisterEvent", 1, "UPDATE_INSTANCE_INFO") -- unregister event after 2 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
+		self:ScheduleTimer("UnregisterEvent", 5, "UPDATE_INSTANCE_INFO") -- unregister event after 5 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
 		
 	else
 	-- IF ADDON INACTIVE
@@ -936,79 +936,13 @@ end
 
 
 function addon:test_fill_db_si()
-	local temp_idweek
-	-- db_SI = {}
-	for k, v in pairs(db_SI) do
-		db_SI[k]=nil
-	end
+	local TestDBEntry = addonTable.TestDBEntry
+	local key = TestDBEntry.key
 	
-	db_SI["2021 W42: 2343"] = {
-		["2021-10-15 21:33:44"] = {
-			["trigger-type"] = "Bosskill",
-			["trigger-text"] = L["BOSSNAME_XT002"],
-			["raidlead"] = "Maricon",
-			["ID"] = 2343,
-			["timestamp"] = "2021-10-15 21:33:20",
-			["icon"] = "Interface\\Icons\\spell_brokenheart",
-			["raid"] = {
-				["GROUP2"] = {
-					"Ereanor (Offline)", -- [1]
-				},
-				["GROUP1"] = {
-					"Maricon", -- [1]
-					"Wulpho", -- [1]
-					"Sareiha", -- [1]
-				},
-				["GROUP6"] = {
-					"asdfsdsd", -- [1]
-					"Ereserrgrdanor (Offline)", -- [2]
-				},
-			},
-		},
-		["2021-10-15 21:33:20"] = {
-			["trigger-type"] = "Loot",
-			["trigger-text"] = L["ITEMNAME_FragmentValanyr"]..": Wulpho",
-			["raidlead"] = "Wulpho",
-			["ID"] = 2343,
-			["timestamp"] = "2021-10-15 21:33:20",
-			["icon"] = "Interface\\Icons\\inv_ingot_titansteel_red",
-			["raid"] = {
-				["GROUP2"] = {
-					"Ereanor (Offline)", -- [1]
-				},
-				["GROUP1"] = {
-					"Maricon", -- [1]
-					"Wulpho", -- [1]
-					"Sareiha", -- [1]
-				},
-				["GROUP6"] = {
-					"asdfsdsd", -- [1]
-					"Ereserrgrdanor (Offline)", -- [2]
-				},
-			},
-		},
-		["2021-10-15 21:33:55"] = {
-			["trigger-type"] = "Bosskill",
-			["trigger-text"] = L["BOSSNAME_Hodir"],
-			["raidlead"] = "Wulpho",
-			["ID"] = 2343,
-			["timestamp"] = "2021-10-15 21:33:20",
-			["icon"] = "Interface\\Icons\\inv_sigil_hodir",
-			["raid"] = {
-				["GROUP2"] = {
-					"Ereanor (Offline)", -- [1]
-				},
-				["GROUP1"] = {
-					"Maricon", -- [1]
-					"Wulpho", -- [1]
-					"Sareiha", -- [1]
-				},
-				["GROUP6"] = {
-					"asdfsdsd", -- [1]
-					"Ereserrgrdanor (Offline)", -- [2]
-				},
-			},
-		},
+	db_SI[key] = {
+		[TestDBEntry[1].timestamp] = TestDBEntry[1],
+		[TestDBEntry[2].timestamp] = TestDBEntry[2],
+		[TestDBEntry[3].timestamp] = TestDBEntry[3],
 	}
 end
 
@@ -1140,7 +1074,7 @@ function addon:PLAYER_ENTERING_WORLD(...)
 		addon:RegisterEvent("UPDATE_INSTANCE_INFO") -- Register to fetch the Raid ID
         RequestRaidInfo()
 		
-		self:ScheduleTimer("UnregisterEvent", 2, "UPDATE_INSTANCE_INFO") -- unregister event after 2 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
+		self:ScheduleTimer("UnregisterEvent", 10, "UPDATE_INSTANCE_INFO") -- unregister event after 10 secs so that we dont check the UPDATE_INSTANCE_INFO anymore until we get the instance id
 	end
 end
 

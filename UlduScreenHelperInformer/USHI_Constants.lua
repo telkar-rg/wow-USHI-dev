@@ -110,3 +110,159 @@ addonTable.IconList[L["BOSSNAME_Hodir"]] = 			"Interface\\Icons\\".."inv_sigil_h
 addonTable.IconList[L["BOSSNAME_Mimiron"]] = 		"Interface\\Icons\\".."inv_sigil_mimiron" --"achievement_boss_mimiron_01"
 addonTable.IconList[L["BOSSNAME_GeneralVezax"]] = 	"Interface\\Icons\\".."inv_misc_ahnqirajtrinket_05" --"achievement_boss_generalvezax_01"
 addonTable.IconList[L["BOSSNAME_YoggSaron"]] = 		"Interface\\Icons\\".."spell_shadow_shadesofdarkness" --"achievement_boss_yoggsaron_01"
+
+do
+	local t_now, key_time
+	local t1 = date("*t", time())
+	local t2 = date("*t", time()+111)
+	local t3 = date("*t", time()+333)
+	addonTable.TestDBEntry = {}
+	
+	t_now = t1
+	addonTable.TestDBEntry["key"] = string.format("%d W%02d: %d", t_now.year, math.ceil( t_now.yday / 7 ), -1)
+	
+	t_now = t1
+	key_time = string.format("%d-%02d-%02d %02d:%02d:%02d", t_now.year, t_now.month, t_now.day, t_now.hour, t_now.min, t_now.sec)
+	addonTable.TestDBEntry[1] = {
+		["trigger-type"] = "Bosskill",
+		["trigger-text"] = L["BOSSNAME_XT002"],
+		["raidlead"] = "shadowcrag",
+		["ID"] = -1,
+		["timestamp"] = key_time,
+		["icon"] = "Interface\\Icons\\spell_brokenheart",
+		["raid"] = {
+			["GROUP1"] = {
+				"mountainscar (Offline)", -- [1]
+				"shadowcrag", -- [2]
+				"spiritsprinter", -- [3]
+				"flamewillow", -- [4]
+				"warriver", -- [5]
+			},
+			["GROUP2"] = {
+				"silverdream (Offline)", -- [1]
+				"wolfshade", -- [2]
+				"bluescar", -- [3]
+				"shieldeyes (Offline)", -- [4]
+				"commoncrest (Offline)", -- [5]
+			},
+			["GROUP3"] = {
+				"clawsnow", -- [1]
+				"mountainheart", -- [2]
+				"cliffbrace", -- [3]
+				"regaldown", -- [4]
+				"autumngrain", -- [5]
+			},
+			["GROUP4"] = {
+				"leafwalker", -- [1]
+				"tuskshadow", -- [2]
+				"slatesteel", -- [3]
+				"greenstriker", -- [4]
+				"twoglade", -- [5]
+			},
+			["GROUP5"] = {
+				"leafkiller", -- [1]
+				"chestorb", -- [2]
+				"havengrain", -- [3]
+				"grassdane", -- [4]
+				"regalblood", -- [5]
+			},
+			["GROUP8"] = {
+				"fistgrove (Offline)", -- [1]
+				"cleareyes (Offline)", -- [2]
+				"autumnbough (Offline)", -- [3]
+			},
+		},
+	}
+	
+	t_now = t2
+	key_time = string.format("%d-%02d-%02d %02d:%02d:%02d", t_now.year, t_now.month, t_now.day, t_now.hour, t_now.min, t_now.sec)
+	addonTable.TestDBEntry[2] = {
+		["trigger-type"] = "Loot",
+		["trigger-text"] = L["ITEMNAME_FragmentValanyr"]..": wolfshade",
+		["raidlead"] = "shadowcrag",
+		["ID"] = -1,
+		["timestamp"] = key_time,
+		["icon"] = "Interface\\Icons\\inv_ingot_titansteel_red",
+		["raid"] = {
+			["GROUP1"] = {
+				"mountainscar (Offline)", -- [1]
+				"shadowcrag", -- [2]
+				"spiritsprinter", -- [3]
+				"flamewillow", -- [4]
+				"warriver", -- [5]
+			},
+			["GROUP2"] = {
+				"wolfshade", -- [2]
+				"bluescar", -- [3]
+				"fisthammer", -- [3]
+			},
+			["GROUP3"] = {
+				"clawsnow", -- [1]
+				"mountainheart", -- [2]
+				"regaldown", -- [4]
+				"autumngrain", -- [5]
+				"hellbraid", -- [5]
+			},
+			["GROUP4"] = {
+				"leafwalker", -- [1]
+				"slatesteel", -- [3]
+				"greenstriker", -- [4]
+				"twoglade", -- [5]
+				"horsefollower", -- [5]
+			},
+			["GROUP5"] = {
+				"leafkiller", -- [1]
+				"havengrain", -- [3]
+				"grassdane", -- [4]
+				"frostbleeder", -- [5]
+			},
+			["GROUP8"] = {
+				"steelsnout (Offline)", -- [1]
+				"cleareyes (Offline)", -- [2]
+			},
+		},
+	}
+	
+	t_now = t3
+	key_time = string.format("%d-%02d-%02d %02d:%02d:%02d", t_now.year, t_now.month, t_now.day, t_now.hour, t_now.min, t_now.sec)
+	addonTable.TestDBEntry[3] = {
+		["trigger-type"] = "Bosskill",
+		["trigger-text"] = L["BOSSNAME_Hodir"],
+		["raidlead"] = "shadowcrag",
+		["ID"] = -1,
+		["timestamp"] = key_time,
+		["icon"] = "Interface\\Icons\\inv_sigil_hodir",
+		["raid"] = {
+			["GROUP1"] = {
+				"flintdust", -- [1]
+				"shadowcrag", -- [2]
+				"spiritsprinter", -- [3]
+				"warriver", -- [4]
+			},
+			["GROUP2"] = {
+				"wolfshade", -- [2]
+				"bluescar", -- [3]
+				"rosefury", -- [4]
+			},
+			["GROUP3"] = {
+				"mountainheart", -- [2]
+				"cliffbrace", -- [3]
+				"regaldown", -- [4]
+				"autumngrain", -- [5]
+				"alpendream", -- [5]
+			},
+			["GROUP4"] = {
+				"leafwalker", -- [1]
+				"tuskshadow", -- [2]
+				"slatesteel (Offline)", -- [3]
+				"greenstriker", -- [4]
+				"twoglade", -- [5]
+			},
+			["GROUP5"] = {
+				"leafkiller", -- [1]
+				"havengrain", -- [3]
+				"regalblood", -- [5]
+			},
+		},
+	}
+end
