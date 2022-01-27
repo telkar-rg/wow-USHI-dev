@@ -14,4 +14,5 @@ addonTable.ColorList = {
 	["ORANGE"] =	"ff".."ff9933",
 	["CYAN"] =		"ff".."00ffff",
 	["YELLOW"] =	"ff".."ffff00",
+	["PURPLE"] =	"ff".."b048f8",
 }

@@ -27,6 +27,7 @@ addonTable.setting_defaults = {
 		[L["BOSSNAME_GeneralVezax"]] = nil,
 		[L["BOSSNAME_YoggSaron"]] = true,
 		[L["ITEMNAME_FragmentValanyr"]] = true,
+		[L["ITEMNAME_MimironsHead"]] = nil,
 	},
 }
 
@@ -75,6 +76,7 @@ addonTable.ItemIDList_SubZoneBoss = {
 }
 addonTable.ItemIDList_Screenshot = {
 	[45038] = "Val'anyr Fragment",
+	[45693] = "Mimiron's Head",
 	-- [43102] = "Frozen Orb",
 	-- [36912] = "Saronite Ore",
 }

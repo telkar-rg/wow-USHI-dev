@@ -12,7 +12,7 @@ local tconcat, tostring, select = table.concat, tostring, select
 local ADDON_NAME, addonTable = ...;
 local defaults = 	addonTable.setting_defaults
 local BossIDList = 	addonTable.BossIDList
-local ItemIDList = 	addonTable.ItemIDList_Screenshot
+local ItemIDList_Screenshot = 	addonTable.ItemIDList_Screenshot
 local ItemIDList_SubZoneBoss = 	addonTable.ItemIDList_SubZoneBoss
 local ColorList = 	addonTable.ColorList
 local ADDON_NAME_LONG = 	addonTable.ADDON_NAME_LONG
@@ -158,6 +158,10 @@ function addon:OnSlashCommand(input)
 		DPrint("SLASH:","Help.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["about"]) 
 		addon:print_help(L["Commands"]) 
+	-- elseif (input=="x") then
+		-- -- addon:ExtraPrint(tx1, tx2)
+		-- print("called x")
+		-- self:ScheduleTimer("ExtraPrint", 1, {"123","abc"})
 	else
 		DPrint("SLASH:","unknown command.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["about"]) 
@@ -394,10 +398,12 @@ function addon:TreeUpdate()
 			string_color = nil -- default assignment: no color change of text
 			if current_time_tbl.icon == addonTable.IconList[L["ITEMNAME_FragmentValanyr"]] then
 				string_color = "FFff9933"	-- make fragments orange (legendary)
+			elseif current_time_tbl.icon == addonTable.IconList[L["ITEMNAME_MimironsHead"]] then
+				string_color = "FFb048f8"	-- make epic loot purple (epic)
 			elseif current_time_tbl.icon == addonTable.IconList[L["BOSSNAME_Algalon"]] then
 				string_color = "FF3fc7eb"	-- make Algalon light-blue (mage)
 			elseif current_time_tbl.icon == addonTable.IconList[L["BOSSNAME_YoggSaron"]] then
-				string_color = "FFb048f8"	-- make Yogg-Saron purple (epic)
+				string_color = "FF3fc7eb"	-- make Yogg light-blue (mage)
 			end
 			
 			Menu_Sub[num_2] = {}
@@ -482,6 +488,7 @@ function addon:GetDB()
 			[L["BOSSNAME_GeneralVezax"]] =  defaults.screen_trigger[L["BOSSNAME_GeneralVezax"]],
 			[L["BOSSNAME_YoggSaron"]] = 	defaults.screen_trigger[L["BOSSNAME_YoggSaron"]],
 			[L["ITEMNAME_FragmentValanyr"]] = defaults.screen_trigger[L["ITEMNAME_FragmentValanyr"]],
+			[L["ITEMNAME_MimironsHead"]] = 	defaults.screen_trigger[L["ITEMNAME_MimironsHead"]],
 			} 
 	end
 	
@@ -872,6 +879,23 @@ function addon:CreateOptionsTable()
 						disabled = function() return not db_char.addon_active end,
 						order = 130
 					},
+					trigger_mimi_drop = {
+						name = L["Mimirons Head looting"],
+						desc = L["DESC_OPTION_trigger_mimi_drop"],
+						type = "toggle",
+						set = function(info, val) 
+							if val then 
+								db_options.screen_trigger[L["ITEMNAME_MimironsHead"]] = true 
+							else
+								db_options.screen_trigger[L["ITEMNAME_MimironsHead"]] = nil 
+							end
+						end,
+						get = function(info) 
+							return db_options.screen_trigger[L["ITEMNAME_MimironsHead"]] 
+						end,
+						disabled = function() return not db_char.addon_active end,
+						order = 135
+					},
 				}
 			},
 			
@@ -1189,7 +1213,7 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 	end
 	
 	-- IF the received item is on the list of screenshot items
-	if (ItemIDList[itemId]) then
+	if (ItemIDList_Screenshot[itemId]) then
 		DPrint(playerName.." received "..itemCount.."x "..itemLink..".")
 		addon:SaveTriggerEvent("Loot", itemName, itemName..": "..playerName)
 		
@@ -1218,7 +1242,14 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 	
 	-- Create Entry: IF everyTrigger OR selectTrigger AND is boss in selected list?
 	if (db_char.chooseCreateEntryOn==3) or ( (db_char.chooseCreateEntryOn==2) and (db_options.screen_trigger[reason_raw]) ) then
-		addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
+		if LockoutID_key then
+			addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
+		else
+			-- in case of FlameLevi we do not have an id yet
+			print(addEntrySI_delayed)
+			-- addon:addEntrySI_delayed(time_stamp, trigger_type, reason_raw, reason_detail)
+			self:ScheduleTimer("addEntrySI_delayed", 0.5, {time_stamp, trigger_type, reason_raw, reason_detail})
+		end
 		hasEntry = true
 		-- DPrint("Create Entry","true","|","db_char.chooseCreateEntryOn",db_char.chooseCreateEntryOn,reason_raw)
 	else
@@ -1254,6 +1285,10 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 			-- DPrint("chat output","false","|","db_char.outputEnable",db_char.outputEnable)
 		end
 	end
+end
+
+function addon:addEntrySI_delayed(argTbl)
+	addon:addEntrySI(argTbl[1], argTbl[2], argTbl[3], argTbl[4])
 end
 
 function addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
@@ -1307,6 +1342,8 @@ function addon:GetNPCID(GUID)
         return nil;
     end
 end
+
+
 
 
 function addon:PPrint(...)

@@ -47,6 +47,8 @@ L["Triggers"] = true
 L["DESC_OPTION_trigger_boss_prefix"] = "Defeat of "
 L["Fragment looting"] = "|c"..addonTable.ColorList["ORANGE"].."Fragment looting".."|r"
 L["DESC_OPTION_trigger_val_drop"] = "Looting of Fragment of Val'anyr"
+L["Mimirons Head looting"] = "|c"..addonTable.ColorList["PURPLE"].."Mimiron's Head looting".."|r"
+L["DESC_OPTION_trigger_mimi_drop"] = "Looting of Mimiron's Head"
 
 
 L["Raidlead"] = true
