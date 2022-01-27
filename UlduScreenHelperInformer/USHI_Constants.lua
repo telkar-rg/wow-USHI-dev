@@ -87,12 +87,17 @@ addonTable.BossSubZoneList = {
 	[L["BOSSNAME_Freya"]] =  L["ZONENAME_SubFreya"],
 	[L["BOSSNAME_Thorim"]] = L["ZONENAME_SubThorim"],
 	[L["BOSSNAME_Hodir"]] =  L["ZONENAME_SubHodir"],
+	
 	[L["BOSSNAME_Mimiron"]] = L["ZONENAME_SubMimiron"],
+	[L["BOSSNAME_Mimiron_Computer"]] = L["ZONENAME_SubMimiron"],
 }
 
 addonTable.IconList = {}
 addonTable.IconList["Default"] = 					"Interface\\Icons\\".."inv_misc_questionmark"
+
+addonTable.IconList[L["ITEMNAME_MimironsHead"]] = 	"Interface\\Icons\\".."inv_misc_enggizmos_03"
 addonTable.IconList[L["ITEMNAME_FragmentValanyr"]] = "Interface\\Icons\\".."inv_ingot_titansteel_red"
+
 addonTable.IconList[L["BOSSNAME_FlameLeviathan"]] = "Interface\\Icons\\".."ability_vehicle_siegeenginecharge" --"inv_misc_wrench_02" --"achievement_boss_theflameleviathan_01"
 addonTable.IconList[L["BOSSNAME_Ignis"]] = 			"Interface\\Icons\\".."spell_fire_immolation" --"achievement_boss_ignis_01"
 addonTable.IconList[L["BOSSNAME_Razorscale"]] = 	"Interface\\Icons\\".."ability_mount_razorscale" --"achievement_boss_razorscale"

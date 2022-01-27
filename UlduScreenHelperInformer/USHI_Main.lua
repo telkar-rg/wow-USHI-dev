@@ -1039,6 +1039,11 @@ end
 function addon:CHAT_MSG_MONSTER_YELL(event, textMonster, nameMonster)
 	DPrint("CHAT_MSG_MONSTER_YELL", nameMonster)
 	
+	-- check for the computer yells in Mimiron HM
+	if nameMonster == L["BOSSNAME_Mimiron_Computer"] then
+		nameMonster = L["BOSSNAME_Mimiron"]
+	end
+	
 	-- isSubZoneBoss
 	if addonTable.BossSubZoneList[nameMonster] then
 		-- DPrint(nameMonster, "is a SubZoneBoss.")
@@ -1175,7 +1180,12 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 		DPrint(isSubZoneBoss, "is (presumably) defeated."); 
 		addon:SaveTriggerEvent("Bosskill", isSubZoneBoss, isSubZoneBoss)
 		
-		isSubZoneBoss = nil -- reset subzoneboss tracking
+		print(isSubZoneBoss, "is (presumably) defeated.")
+		self:ScheduleTimer(function(self) 
+				isSubZoneBoss = nil;
+				print(isSubZoneBoss, "is (presumably) defeated.")
+			end, 0.5) -- delay the deletion by 1 sec to ensure that no race condition occurs
+		-- isSubZoneBoss = nil -- reset subzoneboss tracking
 	end
 	
 	-- IF the received item is on the list of screenshot items

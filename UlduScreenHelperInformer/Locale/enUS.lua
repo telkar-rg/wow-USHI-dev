@@ -78,6 +78,7 @@ L["PANEL_ABOUT_text_2"] = (
 
 -- Ulduar 
 L["ITEMNAME_FragmentValanyr"] = "Fragment of Val'anyr"
+L["ITEMNAME_MimironsHead"] = "Mimiron's Head"
 
 
 L["ZONENAME_Ulduar"] = "Ulduar"
@@ -108,6 +109,7 @@ L["BOSSNAME_Freya"] = "Freya"
 L["BOSSNAME_Thorim"] = "Thorim"
 L["BOSSNAME_Hodir"] = "Hodir"
 L["BOSSNAME_Mimiron"] = "Mimiron"
+L["BOSSNAME_Mimiron_Computer"] = "Computer";
 
 L["BOSSNAME_GeneralVezax"] = "General Vezax"
 L["BOSSNAME_YoggSaron"] = "Yogg-Saron"
