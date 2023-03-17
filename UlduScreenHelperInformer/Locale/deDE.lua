@@ -111,3 +111,37 @@ L["BOSSNAME_Mimiron_Computer"] = "Computer";
 
 L["BOSSNAME_GeneralVezax"] = "General Vezax";
 L["BOSSNAME_YoggSaron"] = "Yogg-Saron";
+
+
+L["BOSSYELL_Algalon_engage_trigger"] = "Euer Handeln ist unlogisch. Alle Möglichkeiten dieser Begegnung wurden berechnet. Das Pantheon wird die Nachricht des Beobachters erhalten, ungeachtet des Ausgangs."
+L["BOSSYELL_Algalon_end_trigger"] = "Ich sah Welten umhüllt von den Flammen der Schöpfer"
+
+L["BOSSYELL_Steelbreaker_engage_trigger"] = "So leicht werdet Ihr die Versammlung des Eisens nicht bezwingen, Eindringlinge!"
+L["BOSSYELL_RunemasterMolgeim_engage_trigger"] = "Nur vollständige Dezimierung wird mich zufriedenstellen."
+L["BOSSYELL_StormcallerBrundir_engage_trigger"] = "Selbst wenn Ihr die größten Helden der Welt seid, so seid Ihr doch nichts weiter als Sterbliche."
+L["BOSSYELL_Steelbreaker_end_trigger"] = "Unmöglich..." -- Hardmode - Steelbreaker last
+L["BOSSYELL_RunemasterMolgeim_end_trigger"] = "^Was gewinnt Ihr durch meinen Tod?" -- Semi-Hardmode - Runemaster Molgeim last
+L["BOSSYELL_StormcallerBrundir_end_trigger"] = "Ihr lauft geradewegs in den Schlund des Wahnsinns!" -- Normalmode - Stormcaller Brundir last
+
+L["BOSSYELL_Freya_engage_trigger1"] = "Das Konservatorium muss verteidigt werden!"
+L["BOSSYELL_Freya_engage_trigger2"] = "Ihr Ältesten, gewährt mir Eure Macht!"
+L["BOSSYELL_Freya_conservator_trigger"] = "Eonar, Eure Dienerin braucht Hilfe!"
+L["BOSSYELL_Freya_detonate_trigger"] = "Der Schwarm der Elemente soll über Euch kommen!"
+L["BOSSYELL_Freya_elementals_trigger"] = "Helft mir, Kinder!"
+L["BOSSYELL_Freya_tree_trigger"] = "Ein |cFF00FFFFGeschenk der Lebensbinderin|r fängt an zu wachsen!"
+L["BOSSYELL_Freya_end_trigger"] = "Seine Macht über mich beginnt zu schwinden. Endlich kann ich wieder klar sehen. Ich danke Euch, Helden."
+
+L["BOSSYELL_Hodir_engage_trigger"] = "Für Euer Eindringen werdet Ihr bezahlen!"
+L["BOSSYELL_Hodir_end_trigger"] = "Ich... bin von ihm befreit... endlich."
+
+L["BOSSYELL_Mimiron_engage_trigger"] = "^Wir haben nicht viel Zeit, Freunde!"
+L["BOSSYELL_Mimiron_phase2_trigger"] = "WUNDERBAR! Das sind Ergebnisse nach meinem Geschmack! Integrität der Hülle bei 98,9 Prozent! So gut wie keine Dellen! Und weiter geht's."
+L["BOSSYELL_Mimiron_phase3_trigger"] = "^Danke Euch, Freunde! Eure Anstrengungen haben fantastische Daten geliefert!"
+L["BOSSYELL_Mimiron_phase4_trigger"] = "Vorversuchsphase abgeschlossen. Jetzt kommt der eigentliche Test!"
+L["BOSSYELL_Mimiron_hardmode_trigger"] = "^Warum habt Ihr das denn jetzt gemacht?"
+L["BOSSYELL_Mimiron_end_trigger"] = "^Es scheint, als wäre mir"
+
+L["BOSSYELL_Thorim_phase2_trigger"] = "Eindringlinge! Ihr Sterblichen, die Ihr es wagt, Euch in mein Vergnügen einzumischen"
+L["BOSSYELL_Thorim_phase3_trigger"] = "Ihr unverschämtes Geschmeiß! Ihr wagt es, mich in meinem Refugium herauszufordern? Ich werde Euch eigenhändig zerschmettern!"
+L["BOSSYELL_Thorim_end_trigger"] = "Senkt Eure Waffen! Ich ergebe mich!"
+

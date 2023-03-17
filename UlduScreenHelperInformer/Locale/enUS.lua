@@ -111,7 +111,41 @@ L["BOSSNAME_Freya"] = "Freya"
 L["BOSSNAME_Thorim"] = "Thorim"
 L["BOSSNAME_Hodir"] = "Hodir"
 L["BOSSNAME_Mimiron"] = "Mimiron"
-L["BOSSNAME_Mimiron_Computer"] = "Computer";
+L["BOSSNAME_Mimiron_Computer"] = "Computer"
 
 L["BOSSNAME_GeneralVezax"] = "General Vezax"
 L["BOSSNAME_YoggSaron"] = "Yogg-Saron"
+
+
+L["BOSSYELL_Algalon_engage_trigger"] = "Your actions are illogical. All possible results for this encounter have been calculated. The Pantheon will receive the Observer's message regardless of outcome."
+L["BOSSYELL_Algalon_end_trigger"] = "I have seen worlds bathed in the Makers' flames."
+
+L["BOSSYELL_Steelbreaker_engage_trigger"] = "You will not defeat the Assembly of Iron so easily, invaders!"
+L["BOSSYELL_RunemasterMolgeim_engage_trigger"] = "Nothing short of total decimation will suffice."
+L["BOSSYELL_StormcallerBrundir_engage_trigger"] = "Whether the world's greatest gnats or the world's greatest heroes, you are still only mortal."
+L["BOSSYELL_Steelbreaker_end_trigger"] = "Impossible..." -- Hardmode - Steelbreaker last
+L["BOSSYELL_RunemasterMolgeim_end_trigger"] = "^What have you gained from my defeat?" -- Semi-Hardmode - Runemaster Molgeim last
+L["BOSSYELL_StormcallerBrundir_end_trigger"] = "You rush headlong into the maw of madness!" -- Normalmode - Stormcaller Brundir last
+
+L["BOSSYELL_Freya_engage_trigger1"] = "The Conservatory must be protected!"
+L["BOSSYELL_Freya_engage_trigger2"] = "Elders grant me your strength!"
+L["BOSSYELL_Freya_conservator_trigger"] = "Eonar, your servant requires aid!"
+L["BOSSYELL_Freya_detonate_trigger"] = "The swarm of the elements shall overtake you!"
+L["BOSSYELL_Freya_elementals_trigger"] = "Children, assist me!"
+L["BOSSYELL_Freya_tree_trigger"] = "A |cFF00FFFFLifebinder's Gift|r begins to grow!"
+L["BOSSYELL_Freya_end_trigger"] = "His hold on me dissipates. I can see clearly once more. Thank you, heroes."
+
+L["BOSSYELL_Hodir_engage_trigger"] = "You will suffer for this trespass!"
+L["BOSSYELL_Hodir_end_trigger"] = "I... I am released from his grasp... at last."
+
+L["BOSSYELL_Mimiron_engage_trigger"] = "^We haven't much time, friends!"
+L["BOSSYELL_Mimiron_phase2_trigger"] = "^WONDERFUL! Positively marvelous results!"
+L["BOSSYELL_Mimiron_phase3_trigger"] = "^Thank you, friends!"
+L["BOSSYELL_Mimiron_phase4_trigger"] = "^Preliminary testing phase complete"
+L["BOSSYELL_Mimiron_hardmode_trigger"] = "^Now, why would you go and do something like that?"
+L["BOSSYELL_Mimiron_end_trigger"] = "^It would appear that I've made a slight miscalculation."
+
+L["BOSSYELL_Thorim_phase2_trigger"] = "Interlopers! You mortals who dare to interfere with my sport will pay.... Wait--you..."
+L["BOSSYELL_Thorim_phase3_trigger"] = "Impertinent whelps, you dare challenge me atop my pedestal? I will crush you myself!"
+L["BOSSYELL_Thorim_end_trigger"] = "Stay your arms! I yield!"
+

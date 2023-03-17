@@ -27,7 +27,7 @@ addonTable.setting_defaults = {
 		[L["BOSSNAME_GeneralVezax"]] = nil,
 		[L["BOSSNAME_YoggSaron"]] = true,
 		[L["ITEMNAME_FragmentValanyr"]] = true,
-		[L["ITEMNAME_MimironsHead"]] = nil,
+		[L["ITEMNAME_MimironsHead"]] = true,
 	},
 }
 
@@ -81,42 +81,62 @@ addonTable.ItemIDList_Screenshot = {
 	-- [36912] = "Saronite Ore",
 }
 
+addonTable.IronCouncilNames = {
+	[L["BOSSNAME_Steelbreaker"]] =  	L["BOSSNAME_AssemblyIron"],
+	[L["BOSSNAME_RunemasterMolgeim"]] = L["BOSSNAME_AssemblyIron"],
+	[L["BOSSNAME_StormcallerBrundir"]] = L["BOSSNAME_AssemblyIron"], 
+}
+	
 addonTable.BossSubZoneList = {
 	[L["BOSSNAME_Steelbreaker"]] =  	L["ZONENAME_SubAssemblyIron"],
 	[L["BOSSNAME_RunemasterMolgeim"]] = L["ZONENAME_SubAssemblyIron"],
 	[L["BOSSNAME_StormcallerBrundir"]] = L["ZONENAME_SubAssemblyIron"],
 	
-	[L["BOSSNAME_Freya"]] =  L["ZONENAME_SubFreya"],
-	[L["BOSSNAME_Thorim"]] = L["ZONENAME_SubThorim"],
-	[L["BOSSNAME_Hodir"]] =  L["ZONENAME_SubHodir"],
+	-- [L["BOSSNAME_Freya"]] =  L["ZONENAME_SubFreya"],	--fixed
+	-- [L["BOSSNAME_Thorim"]] = L["ZONENAME_SubThorim"],	-- unused
+	-- [L["BOSSNAME_Hodir"]] =  L["ZONENAME_SubHodir"],	-- unused
 	
-	[L["BOSSNAME_Mimiron"]] = L["ZONENAME_SubMimiron"],
-	[L["BOSSNAME_Mimiron_Computer"]] = L["ZONENAME_SubMimiron"],
+	-- [L["BOSSNAME_Mimiron"]] = L["ZONENAME_SubMimiron"],	-- unused
+	-- [L["BOSSNAME_Mimiron_Computer"]] = L["ZONENAME_SubMimiron"],	-- unused
 }
 
-addonTable.IconList = {}
-addonTable.IconList["Default"] = 					"Interface\\Icons\\".."inv_misc_questionmark"
+-- List of Bosses for which we have to use their Defeat Yell
+addonTable.BossDefeatYellList = {
+	-- [L["BOSSNAME_Steelbreaker"]] =  	L["BOSSYELL_Steelbreaker_end_trigger"],
+	-- [L["BOSSNAME_RunemasterMolgeim"]] = L["BOSSYELL_RunemasterMolgeim_end_trigger"],
+	-- [L["BOSSNAME_StormcallerBrundir"]] = L["BOSSYELL_StormcallerBrundir_end_trigger"],
+	
+	[L["BOSSNAME_Freya"]] =  L["BOSSYELL_Freya_end_trigger"],	-- BUGGY auf RG! --fixed
+	[L["BOSSNAME_Thorim"]] = L["BOSSYELL_Thorim_end_trigger"],
+	[L["BOSSNAME_Hodir"]] =  L["BOSSYELL_Hodir_end_trigger"],
+	[L["BOSSNAME_Mimiron"]] = L["BOSSYELL_Mimiron_end_trigger"],
+	
+	[L["BOSSNAME_Algalon"]] = L["BOSSYELL_Algalon_end_trigger"],
+}
 
-addonTable.IconList[L["ITEMNAME_MimironsHead"]] = 	"Interface\\Icons\\".."inv_misc_enggizmos_03"
-addonTable.IconList[L["ITEMNAME_FragmentValanyr"]] = "Interface\\Icons\\".."inv_ingot_titansteel_red"
-
-addonTable.IconList[L["BOSSNAME_FlameLeviathan"]] = "Interface\\Icons\\".."ability_vehicle_siegeenginecharge" --"inv_misc_wrench_02" --"achievement_boss_theflameleviathan_01"
-addonTable.IconList[L["BOSSNAME_Ignis"]] = 			"Interface\\Icons\\".."spell_fire_immolation" --"achievement_boss_ignis_01"
-addonTable.IconList[L["BOSSNAME_Razorscale"]] = 	"Interface\\Icons\\".."ability_mount_razorscale" --"achievement_boss_razorscale"
-addonTable.IconList[L["BOSSNAME_XT002"]] = 			"Interface\\Icons\\".."spell_brokenheart" --"achievement_boss_xt002deconstructor_01"
-addonTable.IconList[L["BOSSNAME_AssemblyIron"]] = 	"Interface\\Icons\\".."achievement_boss_theironcouncil_01" --"achievement_dungeon_ulduarraid_irondwarf_01"
-addonTable.IconList[L["BOSSNAME_Steelbreaker"]] = 	"Interface\\Icons\\".."achievement_boss_theironcouncil_01" --"achievement_dungeon_ulduarraid_irondwarf_01"
-addonTable.IconList[L["BOSSNAME_RunemasterMolgeim"]] = 	"Interface\\Icons\\".."achievement_boss_theironcouncil_01" --"achievement_dungeon_ulduarraid_irondwarf_01"
-addonTable.IconList[L["BOSSNAME_StormcallerBrundir"]] = "Interface\\Icons\\".."achievement_boss_theironcouncil_01" --"achievement_dungeon_ulduarraid_irondwarf_01"
-addonTable.IconList[L["BOSSNAME_Kologarn"]] = 		"Interface\\Icons\\".."inv_elemental_primal_earth" --"achievement_boss_kologarn_01"
-addonTable.IconList[L["BOSSNAME_Algalon"]] = 		"Interface\\Icons\\".."achievement_boss_algalon_01" --"achievement_boss_algalon_01"
-addonTable.IconList[L["BOSSNAME_Auriaya"]] = 		"Interface\\Icons\\".."ability_mount_blackpanther" --"achievement_boss_auriaya_01"
-addonTable.IconList[L["BOSSNAME_Freya"]] = 			"Interface\\Icons\\".."inv_sigil_freya" --"achievement_boss_freya_01"
-addonTable.IconList[L["BOSSNAME_Thorim"]] = 		"Interface\\Icons\\".."inv_sigil_thorim" --"achievement_boss_thorim"
-addonTable.IconList[L["BOSSNAME_Hodir"]] = 			"Interface\\Icons\\".."inv_sigil_hodir" --"achievement_boss_hodir_01"
-addonTable.IconList[L["BOSSNAME_Mimiron"]] = 		"Interface\\Icons\\".."inv_sigil_mimiron" --"achievement_boss_mimiron_01"
-addonTable.IconList[L["BOSSNAME_GeneralVezax"]] = 	"Interface\\Icons\\".."inv_misc_ahnqirajtrinket_05" --"achievement_boss_generalvezax_01"
-addonTable.IconList[L["BOSSNAME_YoggSaron"]] = 		"Interface\\Icons\\".."spell_shadow_shadesofdarkness" --"achievement_boss_yoggsaron_01"
+addonTable.IconList = {
+	["Default"] = 					"Interface\\Icons\\".."inv_misc_questionmark",
+	[L["ITEMNAME_MimironsHead"]] = 	"Interface\\Icons\\".."inv_misc_enggizmos_03",
+	[L["ITEMNAME_FragmentValanyr"]] = "Interface\\Icons\\".."inv_ingot_titansteel_red",
+	
+	[L["BOSSNAME_FlameLeviathan"]] = "Interface\\Icons\\".."ability_vehicle_siegeenginecharge", --"inv_misc_wrench_02" --"achievement_boss_theflameleviathan_01",
+	[L["BOSSNAME_Ignis"]] = 		"Interface\\Icons\\".."spell_fire_immolation", --"achievement_boss_ignis_01",
+	[L["BOSSNAME_Razorscale"]] = 	"Interface\\Icons\\".."ability_mount_razorscale", --"achievement_boss_razorscale",
+	[L["BOSSNAME_XT002"]] = 		"Interface\\Icons\\".."spell_brokenheart", --"achievement_boss_xt002deconstructor_01",
+	[L["BOSSNAME_AssemblyIron"]] = 	"Interface\\Icons\\".."achievement_boss_theironcouncil_01", --"achievement_dungeon_ulduarraid_irondwarf_01",
+	[L["BOSSNAME_Steelbreaker"]] = 	"Interface\\Icons\\".."achievement_boss_theironcouncil_01", --"achievement_dungeon_ulduarraid_irondwarf_01",
+	[L["BOSSNAME_RunemasterMolgeim"]] = "Interface\\Icons\\".."achievement_boss_theironcouncil_01", --"achievement_dungeon_ulduarraid_irondwarf_01",
+	[L["BOSSNAME_StormcallerBrundir"]] = "Interface\\Icons\\".."achievement_boss_theironcouncil_01", --"achievement_dungeon_ulduarraid_irondwarf_01",
+	[L["BOSSNAME_Kologarn"]] = 		"Interface\\Icons\\".."inv_elemental_primal_earth", --"achievement_boss_kologarn_01",
+	[L["BOSSNAME_Algalon"]] = 		"Interface\\Icons\\".."achievement_boss_algalon_01", --"achievement_boss_algalon_01",
+	[L["BOSSNAME_Auriaya"]] = 		"Interface\\Icons\\".."ability_mount_blackpanther", --"achievement_boss_auriaya_01",
+	[L["BOSSNAME_Freya"]] = 		"Interface\\Icons\\".."inv_sigil_freya", --"achievement_boss_freya_01",
+	[L["BOSSNAME_Thorim"]] = 		"Interface\\Icons\\".."inv_sigil_thorim", --"achievement_boss_thorim",
+	[L["BOSSNAME_Hodir"]] = 		"Interface\\Icons\\".."inv_sigil_hodir", --"achievement_boss_hodir_01",
+	[L["BOSSNAME_Mimiron"]] = 		"Interface\\Icons\\".."inv_sigil_mimiron", --"achievement_boss_mimiron_01",
+	[L["BOSSNAME_GeneralVezax"]] = 	"Interface\\Icons\\".."inv_misc_ahnqirajtrinket_05", --"achievement_boss_generalvezax_01",
+	[L["BOSSNAME_YoggSaron"]] = 	"Interface\\Icons\\".."spell_shadow_shadesofdarkness", --"achievement_boss_yoggsaron_01"
+}
 
 do
 	local t_now, key_time

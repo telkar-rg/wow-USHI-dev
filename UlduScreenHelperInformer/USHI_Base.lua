@@ -2,17 +2,17 @@
 
 addonTable.ADDON_NAME_LONG = 	"Ulduar Screenshot Helper & Informer"
 addonTable.ADDON_NAME_SHORT = 	"USHI"
-addonTable.ADDON_VERSION = 		"1.2.2"
+addonTable.ADDON_VERSION = 		"1.2.3"
 
 addonTable.ColorList = {
-	["COL_USHI"] =	"ff".."33ff99",
-	["WHITE"] =		"ff".."ffffff",
-	["BLACK"] =		"ff".."000000",
-	["GRAY"] =		"ff".."aaaaaa",
-	["BLUE"] =		"ff".."0000ff",
-	["BLUE_LIGHT"] ="ff".."44aaff",
-	["ORANGE"] =	"ff".."ff9933",
-	["CYAN"] =		"ff".."00ffff",
-	["YELLOW"] =	"ff".."ffff00",
-	["PURPLE"] =	"ff".."b048f8",
+	["COL_USHI"] =	"FF33ff99",
+	["WHITE"] =		"FFffffff",
+	["BLACK"] =		"FF000000",
+	["GRAY"] =		"FFaaaaaa",
+	["BLUE"] =		"FF0000ff",
+	["BLUE_LIGHT"] ="FF44aaff",
+	["ORANGE"] =	"FFff9933",
+	["CYAN"] =		"FF00ffff",
+	["YELLOW"] =	"FFffff00",
+	["PURPLE"] =	"FFb048f8",
 }
