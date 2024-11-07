@@ -38,6 +38,7 @@ local cmdVerHello  = "VER_HELLO"
 local cmdVerReply  = "VER_REPLY"
 
 local playerName
+local versionDetectNew
 
 
 
@@ -69,7 +70,8 @@ local function DPrint(...)
 	if db_char.debug_msg then
 		local tmp={}
 		local n=1
-		tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).."-debug".."|r:"
+		tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).." (".. addonTable.ADDON_VERSION ..")-debug|r:"
+		-- tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).."-debug".."|r:"
 		
 		for i=1, select("#", ...) do
 			n=n+1
@@ -567,7 +569,7 @@ function addon:PrintVersionState()
 	else
 		addon_state = "|c"..ColorList["GRAY"].."inactive".."|r"
 	end
-	addon:PPrint("Version", ADDON_VERSION, "(".. addon_state ..")", addonTable.ADDON_VERSION_NUM)
+	addon:PPrint( addon_state )
 end
 
 
@@ -1610,6 +1612,15 @@ function addon:rxVerReply(senderName, versionNumber)
 		-- store their version number
 		playerVersionTable[senderName] = versionNumber
 	end
+	
+	if not versionDetectNew then
+		if versionNumber > addonTable.ADDON_VERSION_NUM then
+			versionDetectNew = 1
+			
+			-- inform new version
+			self:PPrint("|cffFF8080" .. "Newer version is available!".."|r")
+		end
+	end
 end
 
 
@@ -1629,7 +1640,7 @@ function addon:PPrint(...)
 	-- LibStub("AceLocale-3.0"):Print(ADDON_NAME_SHORT,DEFAULT_CHAT_FRAME,...)
 	local tmp={}
 	local n=1
-	tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).."|r:"
+	tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).." (".. addonTable.ADDON_VERSION ..")|r:"
 	
 	for i=1, select("#", ...) do
 		n=n+1
@@ -1643,7 +1654,7 @@ end
 function addon:RWPrint(...)
 	local tmp={}
 	local n=1
-	tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).."|r:"
+	tmp[n] = "|c"..ColorList["COL_USHI"]..tostring( ADDON_NAME_SHORT ).." (".. addonTable.ADDON_VERSION ..")|r:"
 	
 	for i=1, select("#", ...) do
 		n=n+1
