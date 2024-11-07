@@ -1,6 +1,7 @@
 ## Author: Telkar (Rising Gods)
 ## Interface: 30300
-## Title: Ulduar |cff33ff99Screenshot Helper & Informer|r (USHI 1.2.3)
+## Version: 1.3.0
+## Title: Ulduar Screenshot Helper & Informer (|cff33ff99USHI|r)
 ## Notes: Serves to aid in attendance management in Ulduar raids. For certain triggers (boss kills or loot distribution) a |cff33ff99Screenshot|r or |cff33ff99Informer Entry|r can be created automatically. |cff33ff99Informer Entries|r contain the attending characters and can be copied as text from the interface.
 ## SavedVariables: USHI_DB
 ## OptionalDeps: Ace3

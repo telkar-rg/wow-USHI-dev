@@ -1,4 +1,4 @@
-﻿UlduScreenHelperInformer = LibStub("AceAddon-3.0"):NewAddon("UlduScreenHelperInformer", "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0", "AceTimer-3.0")
+﻿UlduScreenHelperInformer = LibStub("AceAddon-3.0"):NewAddon("UlduScreenHelperInformer", "AceConsole-3.0", "AceHook-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceSerializer-3.0", "AceComm-3.0")
 local addon = UlduScreenHelperInformer
 local L = LibStub("AceLocale-3.0"):GetLocale("UlduScreenHelperInformer", true)
 local deformat = 	LibStub("LibDeformat-3.0");
@@ -26,14 +26,26 @@ local debug_FreyaDefeat = false
 local AssemblyOfIron = nil
 
 
+local syncBlockTable = {}
+local syncTimerTable = {}
+local playerVersionTable = {}
+
+-- prefix for SendAddonMessage
+local addonSyncPrefix = "USHI-1-A4836E14"
+
+local cmdSyncEvent = "SYNC_EVENT"
+local cmdVerHello  = "VER_HELLO"
+local cmdVerReply  = "VER_REPLY"
+
+local playerName
+
+
 
 local db_options, db_char, db_SI
 local OptionsTable = {}
 local OptionsTable_2 = {}
 -- local Options_SI = {}
 local SI_MenuTable = {}
-
-
 
 
 local LockoutID_key = nil
@@ -52,7 +64,7 @@ addon.CHATFRAME_OUTPUT = DEFAULT_CHAT_FRAME
 
 local function DPrint(...)
 	-- DEFAULT_CHAT_FRAME:AddMessage( chatprefix..tostring(msg) )
-	-- LibStub("AceLocale-3.0"):Print(ADDON_NAME_SHORT,DEFAULT_CHAT_FRAME,...)
+	-- LibStub("AceLocale-3.0"):Print(ADDON_NAME_SHORT, DEFAULT_CHAT_FRAME, ...)
 	-- if debug_flag then
 	if db_char.debug_msg then
 		local tmp={}
@@ -63,8 +75,8 @@ local function DPrint(...)
 			n=n+1
 			tmp[n] = tostring(select(i, ...))
 		end
-		-- ch_frame_3:AddMessage( table.concat(tmp," ",1,n) )
-		addon.CHATFRAME_OUTPUT:AddMessage( table.concat(tmp," ",1,n) )
+		-- ch_frame_3:AddMessage( table.concat(tmp, " ", 1, n) )
+		addon.CHATFRAME_OUTPUT:AddMessage( table.concat(tmp, " ", 1, n) )
 	end
 end
 
@@ -87,7 +99,7 @@ function addon:OnInitialize()
 	InterfaceOptions_AddCategory(self.optionsFrames.screen_info, ADDON_NAME_SHORT);
 	
     AceConfig:RegisterOptionsTable("USHI-Table-ABOUT", OptionsTable.about)
-	self.optionsFrames.about = AceConfigDialog:AddToBlizOptions("USHI-Table-ABOUT","About", ADDON_NAME_SHORT)
+	self.optionsFrames.about = AceConfigDialog:AddToBlizOptions("USHI-Table-ABOUT", "About", ADDON_NAME_SHORT)
 	
 	addon:TreeUpdate()
 	
@@ -98,10 +110,15 @@ function addon:OnEnable()
     -- Called when the addon is enabled
 	-- print(ADDON_NAME)
 	
+	playerName = UnitName("player")
+	
 	
 	-- Register slash commands
-	addon:RegisterChatCommand("ushi", "OnSlashCommand")
+	self:RegisterChatCommand("ushi", "OnSlashCommand")
 	-- addon:CancelSubZoneBossWatching() -- we definetly want to reset this
+	
+	self:RegisterComm(addonSyncPrefix)
+	-- Callback defaults to "OnCommReceived"
 end
 
 function addon:OnDisable()
@@ -156,31 +173,31 @@ function addon:OnSlashCommand(input)
 	
 	-- Open About panel if there's no parameters or if we do /arl about
 	if ( (not input) or (input and input == "") or (input == "o") or (input == "options") ) then
-		DPrint("SLASH:","Screen Informer.")
+		DPrint("SLASH:", "Screen Informer.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["general"]) 
 	elseif ( (input == "i") or (input == "info") or (input == "informer") ) then 
-		DPrint("SLASH:","Options.")
+		DPrint("SLASH:", "Options.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["screen_info"]) 
 	elseif (input == "test_db") then
 		addon:test_fill_db_si()
 		addon:TreeUpdate()
 	elseif (input == "?" or input == "help" or input == "about") then
-		DPrint("SLASH:","Help.")
+		DPrint("SLASH:", "Help.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["about"]) 
 		addon:print_help(L["Commands"]) 
 		
 	elseif (input=="add" or input=="man" or input=="manual") then
 		
 		if isUlduRaid and LockoutID_key then
-			DPrint("SLASH:","Manual Entry!")
+			DPrint("SLASH:", "Manual Entry!")
 			addon:SaveTriggerEvent("Bosskill", "Manual Entry", "Manual Entry")
 			
 		else
-			DPrint("SLASH:","Manual Entry (failed).")
+			DPrint("SLASH:", "Manual Entry (failed).")
 		end
 		
 	else
-		DPrint("SLASH:","unknown command.")
+		DPrint("SLASH:", "unknown command.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["about"]) 
 		addon:print_help(L["Unknown Command"]) 
 	end
@@ -550,7 +567,7 @@ function addon:PrintVersionState()
 	else
 		addon_state = "|c"..ColorList["GRAY"].."inactive".."|r"
 	end
-	addon:PPrint("Version",ADDON_VERSION,"(".. addon_state ..")")
+	addon:PPrint("Version", ADDON_VERSION, "(".. addon_state ..")", addonTable.ADDON_VERSION_NUM)
 end
 
 
@@ -1098,8 +1115,8 @@ function addon:CheckIfUlduRaid()
 	-- DPrint("addon:CheckIfUlduRaid()")
 	
 	-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
-	local _, _, _, _, maxPlayers = GetInstanceInfo()
-	local mapName = GetMapInfo()
+	local mapName, _, _, _, maxPlayers = GetInstanceInfo()
+	-- local mapName = GetMapInfo()
 	
 	-- if (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and (maxPlayers==25 or maxPlayers>0) then --DEBUG ignore raid size for now (at least >0)
 	if ( (mapName == "Ulduar") and (maxPlayers==25) )  then
@@ -1114,12 +1131,14 @@ function addon:setUlduRaid(new_state)
 	if (not isUlduRaid) and (new_state) then -- set from 0 to 1
 		isUlduRaid = new_state 
 		DPrint("isUlduRaid", "|c"..ColorList["BLUE_LIGHT"]..tostring(isUlduRaid) .."|r")
+		addon:txVerHello() -- send our version number to raid
 		
 		addon:RegisterEvent("CHAT_MSG_LOOT");
 		addon:RegisterEvent("CHAT_MSG_SYSTEM");
 		addon:RegisterEvent("CHAT_MSG_MONSTER_YELL");
 		-- addon:RegisterEvent("CHAT_MSG_MONSTER_SAY");
 		addon:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+		-- addon:RegisterEvent("CHAT_MSG_ADDON");
 	elseif (isUlduRaid) and (not new_state)  then -- set from 1 to 0
 		isUlduRaid = new_state
 		DPrint("isUlduRaid", "|c"..ColorList["YELLOW"]..tostring(isUlduRaid) .."|r")
@@ -1129,6 +1148,7 @@ function addon:setUlduRaid(new_state)
 		addon:UnregisterEvent("CHAT_MSG_MONSTER_YELL");
 		-- addon:UnregisterEvent("CHAT_MSG_MONSTER_SAY");
 		addon:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+		-- addon:UnregisterEvent("CHAT_MSG_ADDON");
 		
 		-- addon:CancelSubZoneBossWatching() -- we definetly want to reset this
 	end
@@ -1156,7 +1176,7 @@ function addon:UPDATE_INSTANCE_INFO()
 	
 		local index, reset_time, reset_date, reset_week
 		local instanceName, instanceID, instanceResetSeconds, instanceDifficulty, locked, isRaid, maxPlayers
-		for index=1,GetNumSavedInstances() do
+		for index=1, GetNumSavedInstances() do
 			instanceName, instanceID, instanceResetSeconds, instanceDifficulty, locked, _, _, isRaid, maxPlayers, _ = GetSavedInstanceInfo(index)
 			if locked  and (instanceName==L["ZONENAME_Ulduar"] ) and maxPlayers==25 then
 			-- if locked  and (instanceName==L["ZONENAME_Ulduar"] ) and maxPlayers==25 then
@@ -1165,14 +1185,14 @@ function addon:UPDATE_INSTANCE_INFO()
 				reset_week = math.ceil( reset_date.yday / 7 ) -- take the year-day and divide by 7 to get the calendar-week-number
 				-- string raid id: YEAR, WEEK, ID
 				LockoutID_value = instanceID
-				LockoutID_key = string.format("%d W%02d: %d", reset_date.year, reset_week, instanceID) -- tostring(reset_date.year)..","..tostring(reset_week)..","..tostring(instanceID)
-				DPrint("LockoutID_key",LockoutID_key)
+				LockoutID_key = string.format("%d W%02d: %d", reset_date.year, reset_week, instanceID) -- tostring(reset_date.year)..", "..tostring(reset_week)..", "..tostring(instanceID)
+				DPrint("LockoutID_key", LockoutID_key)
 				
 				addon:UnregisterEvent("UPDATE_INSTANCE_INFO") -- we have the LockoutID_key, we stop looking for the IDs
 				addon:UnregisterEvent("CHAT_MSG_SYSTEM")
 				break;
 			end
-		end -- for index=1,GetNumSavedInstances
+		end -- for index=1, GetNumSavedInstances
 		
 		addonTable.RealZoneText = GetRealZoneText()
 		addonTable.PlayerName = GetUnitName("player")
@@ -1195,66 +1215,12 @@ function addon:CHAT_MSG_MONSTER_YELL(event, msgMonster, nameMonster)
 		end
 	end
 	
-	
-	-- -- isSubZone.BossName - only used for buggy freya
-	-- if addonTable.BossSubZoneList[nameMonster] then
-		-- if (addonTable.BossSubZoneList[nameMonster] == GetSubZoneText() ) then
-			-- isSubZone.BossName = nameMonster
-			
-			-- if not isSubZone.BossList then isSubZone.BossList = {} end
-			-- isSubZone.BossList[nameMonster] = true
-			
-			-- isSubZone.Timeout = 5	-- every yell is a reset, since we encountered them (timeout after 5 mins)
-			
-			-- if not isSubZone.CombatTimer then
-				-- isSubZone.CombatFlag = false	-- reset combat flag
-				-- isSubZone.CombatTimer = addon:ScheduleRepeatingTimer("CheckSubZoneBossCombat", 60) -- check if combat is ongoing every minute
-			-- end
-			
-			-- DPrint("["..addonTable.BossSubZoneList[nameMonster].."]is the correct SubZone for ["..nameMonster.."]")
-		-- end
-	-- else
-		-- -- isSubZone.BossName = nil
-	-- end
 end
 
--- function addon:CheckSubZoneBossCombat()
-	-- if isSubZone.CombatFlag then		-- if we have seen boss in combatlog
-		-- isSubZone.Timeout = 5
-	-- else
-		-- isSubZone.Timeout = isSubZone.Timeout - 1
-	-- end
-	-- isSubZone.CombatFlag = false	-- reset combat flag
-	
-	-- -- if the combat counter flag is at zero, reset it all
-	-- if (not isSubZone.Timeout) or (isSubZone.Timeout <= 0) or (not isSubZone.BossName) then
-		-- addon:CancelSubZoneBossWatching()
-	-- end
--- end
-
--- function addon:CancelSubZoneBossWatching()
-	-- DPrint("CancelSubZoneBossWatching()")
-	
-	-- isSubZone.Timeout = 0
-	-- isSubZone.CombatFlag = false
-	-- isSubZone.BossName = nil
-	-- isSubZone.BossList = {}
-	
-	-- addon:CancelTimer(isSubZone.CombatTimer, true)	-- reset timer (even if no timer running)
-	-- isSubZone.CombatTimer = nil
--- end
 
 
 
 function addon:CHAT_MSG_MONSTER_SAY(event, msgMonster, nameMonster)
-	-- DPrint("CHAT_MSG_MONSTER_SAY", nameMonster)
-	
-	-- args = {...}
-	-- local myPayload = ""
-	-- for k, v in pairs(args) do
-		-- myPayload = myPayload.."["..tostring(k).."]: "..tostring(v)..", "
-	-- end
-	-- DPrint(myPayload)
 end
 
 
@@ -1282,12 +1248,6 @@ function addon:ZONE_CHANGED_NEW_AREA(...)
 	self:CancelAllTimers()
 	self:ScheduleTimer("CheckIfUlduRaid", 3) -- wait 3 secs after changing zones
 	
-	-- if in raid, check if ulduar
-	-- if (GetNumRaidMembers() > 0) then
-		-- local zoneName = GetRealZoneText()
-		-- local zoneId = GetCurrentMapAreaID()
-		-- DPrint(zoneName,zoneId)
-	-- end
 end
 
 
@@ -1306,15 +1266,15 @@ function addon:COMBAT_LOG_EVENT_UNFILTERED(eventname, ...)
         if (NPCID and BossIDList[NPCID]) then
 			-- mark boss as killed
 			DPrint(destName.." ("..tostring(NPCID)..") is dead", combatEvent); 
-			addon:SaveTriggerEvent("Bosskill", destName, destName)
+			addon:SaveTriggerEvent("Bosskill", BossIDList[NPCID], destName)
 			return
         end
 		
 		if AssemblyOfIron and AssemblyOfIron == destGUID then
-			local bossNameRaw = L["BOSSNAME_AssemblyIron"]
+			-- local bossNameRaw = L["BOSSNAME_AssemblyIron"]
 			local bossNameDetail = L["BOSSNAME_AssemblyIron"] .. " (" .. destName .. ")"
 			
-			addon:SaveTriggerEvent("Bosskill", bossNameRaw, bossNameDetail)
+			addon:SaveTriggerEvent("Bosskill", "BOSSNAME_AssemblyIron", bossNameDetail)
 			return
 		end
     end
@@ -1350,10 +1310,13 @@ end
 function addon:CHAT_MSG_LOOT(eventname, chatmsg)
     -- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
 	local player_received = false
+	local playerName, itemLink, itemCount
 	
+	--[[
     -- first try: somebody else recieved multiple loot (most parameters)
-    local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
+    playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
 	-- if playerName then DPrint("somebody else recieved multiple loot.") end
+	]]--
 	
     -- next try: somebody else recieved single loot
     if (playerName == nil) then
@@ -1362,6 +1325,7 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 		-- if playerName then DPrint("somebody else recieved single loot.") end
     end
 	
+	--[[
     -- if player == nil, then next try: player recieved multiple loot
     if (playerName == nil) then
         playerName = UnitName("player");
@@ -1371,9 +1335,11 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 			player_received = true
 		end
     end
+	]]--
 	
     -- if itemLink == nil, then last try: player recieved single loot
     if (itemLink == nil) then
+		playerName = UnitName("player");
         itemCount = 1;
         itemLink = deformat(chatmsg, LOOT_ITEM_SELF);
 		if itemLink then 
@@ -1426,21 +1392,55 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 end
 
 
-function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
+function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, isSync)
+	local sbtKey = trigger_type .. "!" .. reason_raw
+	
+	-- if this is a SYNC event
+	if isSync then
+		-- On receiving a sync event, we stop our own scheduled transmitting of sync event
+		if syncTimerTable[sbtKey] then
+			self:CancelTimer(syncTimerTable[sbtKey], true)
+			syncTimerTable[sbtKey] = nil
+		end
+	
+	-- if this is a NORMAL event
+	else
+		-- send a sync in 1~2s for that key
+		local t_delay = (1 + random())
+		syncTimerTable[sbtKey] = self:ScheduleTimer("txSyncEvent", t_delay, trigger_type, reason_raw, reason_detail)
+	end
+	
+	-- ############################################################
+		
+	-- if we have that entry in the block table and its timeout is not passed, then we stop
+	if syncBlockTable[sbtKey] and syncBlockTable[sbtKey] > GetTime() then
+		return
+	end
+	
+	-- timeout for receiving next sync of this type is set to 10s
+	syncBlockTable[sbtKey] = GetTime()+10
+	
+	-- ############################################################
+	
+	-- fixing localisation issue for syncing with different clients
+	if L[reason_raw] then
+		reason_raw = L[reason_raw]
+	end
+	
+	-- ############################################################
+	
 	local t_now = date("*t", time())
 	local time_stamp = string.format("%d-%02d-%02d %02d:%02d:%02d", t_now.year, t_now.month, t_now.day, t_now.hour, t_now.min, t_now.sec)
 	local hasScreen = false
 	local hasEntry = false
 	
-
-	
 	-- Create Screenshot: IF everyTrigger OR selectTrigger AND is boss in selected list?
 	if (db_char.chooseCreateScreenOn==3) or ( (db_char.chooseCreateScreenOn==2) and (db_options.screen_trigger[reason_raw]) ) then
 		self:ScheduleTimer(Screenshot, 0.5)
 		hasScreen = true
-		-- DPrint("Create Screenshot","true","|","db_char.chooseCreateScreenOn",db_char.chooseCreateScreenOn,reason_raw)
+		-- DPrint("Create Screenshot", "true", "|", "db_char.chooseCreateScreenOn", db_char.chooseCreateScreenOn, reason_raw)
 	else
-		-- DPrint("Create Screenshot","false","|","db_char.chooseCreateScreenOn",db_char.chooseCreateScreenOn,reason_raw)
+		-- DPrint("Create Screenshot", "false", "|", "db_char.chooseCreateScreenOn", db_char.chooseCreateScreenOn, reason_raw)
 	end
 	
 	-- Create Entry: IF everyTrigger OR selectTrigger AND is boss in selected list?
@@ -1449,33 +1449,33 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 			addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
 		else
 			-- in case of FlameLevi we do not have an id yet
-			print(addEntrySI_delayed)
+			-- print(addEntrySI_delayed)
 			-- addon:addEntrySI_delayed(time_stamp, trigger_type, reason_raw, reason_detail)
 			self:ScheduleTimer("addEntrySI_delayed", 0.5, {time_stamp, trigger_type, reason_raw, reason_detail})
 		end
 		hasEntry = true
-		-- DPrint("Create Entry","true","|","db_char.chooseCreateEntryOn",db_char.chooseCreateEntryOn,reason_raw)
+		-- DPrint("Create Entry", "true", "|", "db_char.chooseCreateEntryOn", db_char.chooseCreateEntryOn, reason_raw)
 	else
-		-- DPrint("Create Entry","false","|","db_char.chooseCreateEntryOn",db_char.chooseCreateEntryOn,reason_raw)
+		-- DPrint("Create Entry", "false", "|", "db_char.chooseCreateEntryOn", db_char.chooseCreateEntryOn, reason_raw)
 	end
-	-- DPrint("hasScreen",hasScreen,",","hasEntry",hasEntry)
-	-- DPrint("trigger_type",trigger_type, "reason_raw",reason_raw, "reason_detail",reason_detail)
+	DPrint("hasScreen", hasScreen, ",", "hasEntry", hasEntry)
+	DPrint("trigger_type", trigger_type, "reason_raw", reason_raw, "reason_detail", reason_detail)
 	
 	if (hasScreen) then
 		-- chat output: IF chat OR chat&screen
 		if (db_char.outputEnable==2) or (db_char.outputEnable==4) then 
 			self:ScheduleTimer("PPrint", 0.2, time_stamp.." "..reason_detail)
-			-- DPrint("chat output","true","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("chat output", "true", "|", "db_char.outputEnable", db_char.outputEnable)
 		else
-			-- DPrint("chat output","false","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("chat output", "false", "|", "db_char.outputEnable", db_char.outputEnable)
 		end
 		
 		-- screen output: IF screen OR chat&screen
 		if (db_char.outputEnable==3) or (db_char.outputEnable==4) then 
 			addon:RWPrint(time_stamp.."\n"..reason_detail)
-			-- DPrint("screen output","true","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("screen output", "true", "|", "db_char.outputEnable", db_char.outputEnable)
 		else
-			-- DPrint("screen output","false","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("screen output", "false", "|", "db_char.outputEnable", db_char.outputEnable)
 		end
 	end
 	
@@ -1483,9 +1483,9 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail)
 		-- chat output: IF chat OR chat&screen
 		if (db_char.outputEnable==2) or (db_char.outputEnable==4) then 
 			self:ScheduleTimer("PPrint", 0.2, time_stamp.." "..reason_detail)
-			-- DPrint("chat output","true","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("chat output", "true", "|", "db_char.outputEnable", db_char.outputEnable)
 		else
-			-- DPrint("chat output","false","|","db_char.outputEnable",db_char.outputEnable)
+			-- DPrint("chat output", "false", "|", "db_char.outputEnable", db_char.outputEnable)
 		end
 	end
 end
@@ -1496,6 +1496,8 @@ end
 
 function addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
 	if LockoutID_key then
+		DPrint(time_stamp, "!", trigger_type, "!", reason_raw, "!", reason_detail)
+		
 		if not db_SI[LockoutID_key] then db_SI[LockoutID_key] = {} end
 		db_SI[LockoutID_key][time_stamp] = {
 			["icon"] = addonTable.IconList["Default"],
@@ -1537,19 +1539,86 @@ end
 
 
 
+function addon:txSyncEvent(...)
+	-- local msg = strjoin("\1", cmdSyncEvent, ...)
+	-- DPrint("|cffFF8080".."TX:", "|cff8080FF"..cmdSyncEvent.."|r", strjoin("; ", ...))
+	-- SendAddonMessage(addonSyncPrefix, msg, "RAID", nil)
+	
+	local msg = self:Serialize( cmdSyncEvent, ...)
+	self:SendCommMessage(addonSyncPrefix, msg, "RAID")
+end
+function addon:txVerHello()
+	local msg = self:Serialize( cmdVerHello )
+	self:SendCommMessage(addonSyncPrefix, msg, "RAID")
+end
+function addon:txVerReply()
+	syncTimerTable["CMD"..cmdVerReply] = nil -- clear spam protection
+	
+	local msg = self:Serialize( cmdVerReply, addonTable.ADDON_VERSION_NUM )
+	self:SendCommMessage(addonSyncPrefix, msg, "RAID")
+end
+
+-- function addon:CHAT_MSG_ADDON(rxPrefix, rxMessage, rxChannel, senderName)
+function addon:OnCommReceived(rxPrefix, rxMessage, rxChannel, senderName)
+	if rxChannel ~= "RAID" then return end
+	if rxPrefix ~= addonSyncPrefix then return end
+	
+	-- Deserialize rxMessage
+	local success, cmd, a1, a2, a3, a4, a5, a6 = self:Deserialize(rxMessage)
+	if not success then return end
+	if not cmd then return end
+	DPrint("|cffFFFF80".."RX:", "|cff8080FF"..cmd, "|cff80FF80"..senderName.."|r", a1 or "", a2 or "", a3 or "", a4 or "", a5 or "", a6 or "")
+	
+	-- IF CMD ################################
+	-- we have received "SYNC_EVENT"
+	if cmd == cmdSyncEvent then
+		local trigger_type, reason_raw, reason_detail = a1, a2, a3
+		
+		if trigger_type and reason_raw and reason_detail then
+			self:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, true)
+		end
+		
+		
+	-- We have received "VerHello"
+	elseif cmd == cmdVerHello then
+		self:rxVerHello()
+		
+	-- We have received "VerReply"
+	elseif cmd == cmdVerReply then
+		self:rxVerReply(senderName, a1)
+		
+	end -- CMD ################################
+end
+function addon:rxSyncEvent(trigger_type, reason_raw, reason_detail)
+	if syncTimerTable["CMD"..cmdVerReply] then return end -- spam protection
+	local t_delay = (1 + random()) -- 1~2 seconds
+	
+	-- reply in 1~2 seconds for spam protection
+	syncTimerTable["CMD"..cmdVerReply] = self:ScheduleTimer("txVerReply", t_delay)
+end
+function addon:rxVerHello()
+	if syncTimerTable["CMD"..cmdVerReply] then return end -- spam protection
+	local t_delay = (1 + random()) -- 1~2 seconds
+	
+	-- reply in 1~2 seconds for spam protection
+	syncTimerTable["CMD"..cmdVerReply] = self:ScheduleTimer("txVerReply", t_delay)
+end
+function addon:rxVerReply(senderName, versionNumber)
+	if senderName == playerName then return end
+	
+	if versionNumber and type(versionNumber) == "number" then
+		-- store their version number
+		playerVersionTable[senderName] = versionNumber
+	end
+end
+
 
 
 
 
 -- GetNPCID - returns the NPCID or nil, if GUID was no NPC
 function addon:GetNPCID(GUID)
-    local first3 = tonumber("0x"..strsub(GUID, 3, 5));
-    local unitType = bit.band(first3, 0x007);
-    if ((unitType == 0x003) or (unitType == 0x005)) then
-        return tonumber("0x"..strsub(GUID, 9, 12));
-    else
-        return nil;
-    end
+	return tonumber(strsub(GUID, 9, 12), 16)
 end
 
 

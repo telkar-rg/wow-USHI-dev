@@ -9,7 +9,7 @@ addonTable.setting_defaults = {
 	-- chat_output = true,
 	useChatFrame = 0, --default chat frame
 	outputEnable = 4, -- default to BOTH
-	chooseCreateScreenOn = 2, -- for selected bosses/trigger
+	chooseCreateScreenOn = 3, -- for selected bosses/trigger
 	chooseCreateEntryOn = 3, -- for every boss/trigger
 	screen_trigger = {
 		[L["BOSSNAME_FlameLeviathan"]] = nil,
@@ -56,27 +56,24 @@ addonTable.BossIDList = {
     -- [39747] = "Saviana ",
     -- [39746] = "Zarithrian ",
 
-    [33113] = "Flame Leviathan",
-    [33118] = "Ignis the Furnace Master",
-    [33186] = "Razorscale",
-    [33293] = "XT-002 Deconstructor",
+    [33113] = "BOSSNAME_FlameLeviathan",
+    [33118] = "BOSSNAME_Ignis",
+    [33186] = "BOSSNAME_Razorscale",
+    [33293] = "BOSSNAME_XT002",
         -- The Assembly of Iron will need bossyell for correct tracking
-    [32930] = "Kologarn",
-    [34297] = "Kologarn",-- there is a second id used, for some reason
-    [33515] = "Auriaya",
+    [32930] = "BOSSNAME_Kologarn",
+    [34297] = "BOSSNAME_Kologarn",-- there is a second id used, for some reason
+    [33515] = "BOSSNAME_Auriaya",
         -- Freya, Hodir, Mimiron and Thorim will need bossyells - they don't die
-    [33271] = "General Vezax",
-    [33288] = "Yogg-Saron",
+    [33271] = "BOSSNAME_GeneralVezax",
+    [33288] = "BOSSNAME_YoggSaron",
         -- Algalon needs a bossyell - he doesn't die
 }
 
-addonTable.ItemIDList_SubZoneBoss = {
-	-- [29434] = "Emblem der Gerechtigkeit",
-	[47241] = "Emblem of Triumph",
-}
+
 addonTable.ItemIDList_Screenshot = {
-	[45038] = "Val'anyr Fragment",
-	[45693] = "Mimiron's Head",
+	[45038] = "ITEMNAME_FragmentValanyr",
+	[45693] = "ITEMNAME_MimironsHead",
 	-- [43102] = "Frozen Orb",
 	-- [36912] = "Saronite Ore",
 }
