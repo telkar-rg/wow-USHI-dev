@@ -111,6 +111,16 @@ addonTable.BossDefeatYellList = {
 	[L["BOSSNAME_Algalon"]] = L["BOSSYELL_Algalon_end_trigger"],
 }
 
+-- List of Bosses for which we have to use their Defeat Yell
+addonTable.BossYellDelocalized = {
+	[L["BOSSNAME_Freya"  ]] = "BOSSNAME_Freya",
+	[L["BOSSNAME_Thorim" ]] = "BOSSNAME_Thorim",
+	[L["BOSSNAME_Hodir"  ]] = "BOSSNAME_Hodir",
+	[L["BOSSNAME_Mimiron"]] = "BOSSNAME_Mimiron",
+	[L["BOSSNAME_Algalon"]] = "BOSSNAME_Algalon",
+}
+
+
 addonTable.IconList = {
 	["Default"] = 					"Interface\\Icons\\".."inv_misc_questionmark",
 	[L["ITEMNAME_MimironsHead"]] = 	"Interface\\Icons\\".."inv_misc_enggizmos_03",

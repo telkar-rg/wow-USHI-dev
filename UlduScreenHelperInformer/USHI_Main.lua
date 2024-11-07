@@ -33,13 +33,32 @@ local playerVersionTable = {}
 -- prefix for SendAddonMessage
 local addonSyncPrefix = "USHI-1-A4836E14"
 
-local cmdSyncEvent = "SYNC_EVENT"
+local cmdSyncEvent = "SYNC_EVENT_2"
 local cmdVerHello  = "VER_HELLO"
 local cmdVerReply  = "VER_REPLY"
 
 local playerName
 local versionDetectNew
 
+local reasonValid = {
+	["ITEMNAME_FragmentValanyr"] = L["ITEMNAME_FragmentValanyr"]
+	["ITEMNAME_MimironsHead"]    = L["ITEMNAME_MimironsHead"]
+	
+	["BOSSNAME_FlameLeviathan"]  = L["BOSSNAME_FlameLeviathan"]
+	["BOSSNAME_Ignis"]           = L["BOSSNAME_Ignis"]
+	["BOSSNAME_Razorscale"]      = L["BOSSNAME_Razorscale"]
+	["BOSSNAME_XT002"]           = L["BOSSNAME_XT002"]
+	["BOSSNAME_AssemblyIron"]    = L["BOSSNAME_AssemblyIron"]
+	["BOSSNAME_Kologarn"]        = L["BOSSNAME_Kologarn"]
+	["BOSSNAME_Algalon"]         = L["BOSSNAME_Algalon"]
+	["BOSSNAME_Auriaya"]         = L["BOSSNAME_Auriaya"]
+	["BOSSNAME_Freya"]           = L["BOSSNAME_Freya"]
+	["BOSSNAME_Thorim"]          = L["BOSSNAME_Thorim"]
+	["BOSSNAME_Hodir"]           = L["BOSSNAME_Hodir"]
+	["BOSSNAME_Mimiron"]         = L["BOSSNAME_Mimiron"]
+	["BOSSNAME_GeneralVezax"]    = L["BOSSNAME_GeneralVezax"]
+	["BOSSNAME_YoggSaron"]       = L["BOSSNAME_YoggSaron"]
+}
 
 
 local db_options, db_char, db_SI
@@ -1213,7 +1232,7 @@ function addon:CHAT_MSG_MONSTER_YELL(event, msgMonster, nameMonster)
 		defeatTrue = msgMonster:lower():find( defeatYell:lower() )
 		if defeatTrue then
 			DPrint("Detected defeatYell for: "..nameMonster.." | "..msgMonster)
-			addon:SaveTriggerEvent("Bosskill", nameMonster, nameMonster)
+			addon:SaveTriggerEvent("Bosskill", addonTable.BossYellDelocalized[nameMonster], nameMonster)
 		end
 	end
 	
@@ -1389,7 +1408,8 @@ function addon:CHAT_MSG_LOOT(eventname, chatmsg)
 	-- IF the received item is on the list of screenshot items
 	if (ItemIDList_Screenshot[itemId]) then
 		DPrint(playerName.." received "..itemCount.."x "..itemLink..".")
-		addon:SaveTriggerEvent("Loot", itemName, itemName..": "..playerName)
+		DPrint(itemId, ItemIDList_Screenshot[itemId])
+		addon:SaveTriggerEvent("Loot", ItemIDList_Screenshot[itemId], itemName..": "..playerName)
 	end
 end
 
@@ -1425,8 +1445,11 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, isSync)
 	-- ############################################################
 	
 	-- fixing localisation issue for syncing with different clients
-	if L[reason_raw] then
-		reason_raw = L[reason_raw]
+	if reasonValid[reason_raw] then
+		reason_raw = reasonValid[reason_raw]
+	else
+		DPrint("|cFFFF8080".."INVALID REASON:|cFF8080FF", reason_raw, "|risSync", isSync)
+		return
 	end
 	
 	-- ############################################################
@@ -1460,8 +1483,8 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, isSync)
 	else
 		-- DPrint("Create Entry", "false", "|", "db_char.chooseCreateEntryOn", db_char.chooseCreateEntryOn, reason_raw)
 	end
-	DPrint("hasScreen", hasScreen, ",", "hasEntry", hasEntry)
-	DPrint("trigger_type", trigger_type, "reason_raw", reason_raw, "reason_detail", reason_detail)
+	-- DPrint("hasScreen", hasScreen, ",", "hasEntry", hasEntry)
+	-- DPrint("trigger_type", trigger_type, "reason_raw", reason_raw, "reason_detail", reason_detail)
 	
 	if (hasScreen) then
 		-- chat output: IF chat OR chat&screen
@@ -1498,7 +1521,7 @@ end
 
 function addon:addEntrySI(time_stamp, trigger_type, reason_raw, reason_detail)
 	if LockoutID_key then
-		DPrint(time_stamp, "!", trigger_type, "!", reason_raw, "!", reason_detail)
+		DPrint("|cFFFF8080addEntrySI|r",time_stamp, "!|cFFFF8080", trigger_type, "|r!", reason_raw, "!|cFFFF8080", reason_detail,"|r")
 		
 		if not db_SI[LockoutID_key] then db_SI[LockoutID_key] = {} end
 		db_SI[LockoutID_key][time_stamp] = {
@@ -1576,9 +1599,10 @@ function addon:OnCommReceived(rxPrefix, rxMessage, rxChannel, senderName)
 	if cmd == cmdSyncEvent then
 		local trigger_type, reason_raw, reason_detail = a1, a2, a3
 		
-		if trigger_type and reason_raw and reason_detail then
-			self:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, true)
-		end
+		-- BAUSTELLE
+		-- if trigger_type and reason_raw and reason_detail then
+			-- self:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, true)
+		-- end
 		
 		
 	-- We have received "VerHello"
@@ -1592,11 +1616,11 @@ function addon:OnCommReceived(rxPrefix, rxMessage, rxChannel, senderName)
 	end -- CMD ################################
 end
 function addon:rxSyncEvent(trigger_type, reason_raw, reason_detail)
-	if syncTimerTable["CMD"..cmdVerReply] then return end -- spam protection
-	local t_delay = (1 + random()) -- 1~2 seconds
+	-- if syncTimerTable["CMD"..cmdVerReply] then return end -- spam protection
+	-- local t_delay = (1 + random()) -- 1~2 seconds
 	
-	-- reply in 1~2 seconds for spam protection
-	syncTimerTable["CMD"..cmdVerReply] = self:ScheduleTimer("txVerReply", t_delay)
+	-- -- reply in 1~2 seconds for spam protection
+	-- syncTimerTable["CMD"..cmdVerReply] = self:ScheduleTimer("txVerReply", t_delay)
 end
 function addon:rxVerHello()
 	if syncTimerTable["CMD"..cmdVerReply] then return end -- spam protection
