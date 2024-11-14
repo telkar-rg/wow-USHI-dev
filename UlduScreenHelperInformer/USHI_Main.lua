@@ -26,14 +26,16 @@ local debug_FreyaDefeat = false
 local AssemblyOfIron = nil
 
 
-local syncBlockTable = {}
+local syncCooldownTable = {}
 local syncTimerTable = {}
 local playerVersionTable = {}
+local playerVersionTableSorted = {}
 
 -- prefix for SendAddonMessage
 local addonSyncPrefix = "USHI-1-A4836E14"
+local SYNC_COOLDOWN = 60 	-- 1 min cd for received syncs
 
-local cmdSyncEvent = "SYNC_EVENT_2"
+local cmdSyncEvent = "SYNC_EVENT"
 local cmdVerHello  = "VER_HELLO"
 local cmdVerReply  = "VER_REPLY"
 
@@ -41,23 +43,23 @@ local playerName
 local versionDetectNew
 
 local reasonValid = {
-	["ITEMNAME_FragmentValanyr"] = L["ITEMNAME_FragmentValanyr"]
-	["ITEMNAME_MimironsHead"]    = L["ITEMNAME_MimironsHead"]
+	["ITEMNAME_FragmentValanyr"] = L["ITEMNAME_FragmentValanyr"],
+	["ITEMNAME_MimironsHead"]    = L["ITEMNAME_MimironsHead"],
 	
-	["BOSSNAME_FlameLeviathan"]  = L["BOSSNAME_FlameLeviathan"]
-	["BOSSNAME_Ignis"]           = L["BOSSNAME_Ignis"]
-	["BOSSNAME_Razorscale"]      = L["BOSSNAME_Razorscale"]
-	["BOSSNAME_XT002"]           = L["BOSSNAME_XT002"]
-	["BOSSNAME_AssemblyIron"]    = L["BOSSNAME_AssemblyIron"]
-	["BOSSNAME_Kologarn"]        = L["BOSSNAME_Kologarn"]
-	["BOSSNAME_Algalon"]         = L["BOSSNAME_Algalon"]
-	["BOSSNAME_Auriaya"]         = L["BOSSNAME_Auriaya"]
-	["BOSSNAME_Freya"]           = L["BOSSNAME_Freya"]
-	["BOSSNAME_Thorim"]          = L["BOSSNAME_Thorim"]
-	["BOSSNAME_Hodir"]           = L["BOSSNAME_Hodir"]
-	["BOSSNAME_Mimiron"]         = L["BOSSNAME_Mimiron"]
-	["BOSSNAME_GeneralVezax"]    = L["BOSSNAME_GeneralVezax"]
-	["BOSSNAME_YoggSaron"]       = L["BOSSNAME_YoggSaron"]
+	["BOSSNAME_FlameLeviathan"]  = L["BOSSNAME_FlameLeviathan"],
+	["BOSSNAME_Ignis"]           = L["BOSSNAME_Ignis"],
+	["BOSSNAME_Razorscale"]      = L["BOSSNAME_Razorscale"],
+	["BOSSNAME_XT002"]           = L["BOSSNAME_XT002"],
+	["BOSSNAME_AssemblyIron"]    = L["BOSSNAME_AssemblyIron"],
+	["BOSSNAME_Kologarn"]        = L["BOSSNAME_Kologarn"],
+	["BOSSNAME_Algalon"]         = L["BOSSNAME_Algalon"],
+	["BOSSNAME_Auriaya"]         = L["BOSSNAME_Auriaya"],
+	["BOSSNAME_Freya"]           = L["BOSSNAME_Freya"],
+	["BOSSNAME_Thorim"]          = L["BOSSNAME_Thorim"],
+	["BOSSNAME_Hodir"]           = L["BOSSNAME_Hodir"],
+	["BOSSNAME_Mimiron"]         = L["BOSSNAME_Mimiron"],
+	["BOSSNAME_GeneralVezax"]    = L["BOSSNAME_GeneralVezax"],
+	["BOSSNAME_YoggSaron"]       = L["BOSSNAME_YoggSaron"],
 }
 
 
@@ -196,12 +198,15 @@ function addon:OnSlashCommand(input)
 	if ( (not input) or (input and input == "") or (input == "o") or (input == "options") ) then
 		DPrint("SLASH:", "Screen Informer.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["general"]) 
+		
 	elseif ( (input == "i") or (input == "info") or (input == "informer") ) then 
 		DPrint("SLASH:", "Options.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["screen_info"]) 
-	elseif (input == "test_db") then
-		addon:test_fill_db_si()
-		addon:TreeUpdate()
+		
+	-- elseif (input == "test_db") then
+		-- addon:test_fill_db_si()
+		-- addon:TreeUpdate()
+		
 	elseif (input == "?" or input == "help" or input == "about") then
 		DPrint("SLASH:", "Help.")
 		InterfaceOptionsFrame_OpenToCategory(self.optionsFrames["about"]) 
@@ -216,6 +221,11 @@ function addon:OnSlashCommand(input)
 		else
 			DPrint("SLASH:", "Manual Entry (failed).")
 		end
+		
+	elseif (input == "ver" or input == "version") then
+		DPrint("SLASH:", "Version.")
+		self:version_check_1() 
+		
 		
 	else
 		DPrint("SLASH:", "unknown command.")
@@ -1137,6 +1147,7 @@ function addon:CheckIfUlduRaid()
 	
 	-- local instanceName, instanceType, difficultyIndex, difficultyName, maxNumberOfPlayers, ?, dynamicInstance = GetInstanceInfo()
 	local mapName, _, _, _, maxPlayers = GetInstanceInfo()
+	-- DPrint(mapName, maxPlayers)
 	-- local mapName = GetMapInfo()
 	
 	-- if (instanceName==L["ZONENAME_Ulduar"] or instanceName=="Der Sonnenbrunnen") and (maxPlayers==25 or maxPlayers>0) then --DEBUG ignore raid size for now (at least >0)
@@ -1433,16 +1444,6 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, isSync)
 	end
 	
 	-- ############################################################
-		
-	-- if we have that entry in the block table and its timeout is not passed, then we stop
-	if syncBlockTable[sbtKey] and syncBlockTable[sbtKey] > GetTime() then
-		return
-	end
-	
-	-- timeout for receiving next sync of this type is set to 10s
-	syncBlockTable[sbtKey] = GetTime()+10
-	
-	-- ############################################################
 	
 	-- fixing localisation issue for syncing with different clients
 	if reasonValid[reason_raw] then
@@ -1451,6 +1452,16 @@ function addon:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, isSync)
 		DPrint("|cFFFF8080".."INVALID REASON:|cFF8080FF", reason_raw, "|risSync", isSync)
 		return
 	end
+	
+	-- ############################################################
+		
+	-- if we have that entry in the block table and its cooldown is active, then we stop
+	if syncCooldownTable[sbtKey] and syncCooldownTable[sbtKey] > GetTime() then
+		return
+	end
+	
+	-- Cooldown for receiving next sync of this type is set to 10s
+	syncCooldownTable[sbtKey] = GetTime() + SYNC_COOLDOWN
 	
 	-- ############################################################
 	
@@ -1585,6 +1596,7 @@ end
 
 -- function addon:CHAT_MSG_ADDON(rxPrefix, rxMessage, rxChannel, senderName)
 function addon:OnCommReceived(rxPrefix, rxMessage, rxChannel, senderName)
+	if not isUlduRaid then return end
 	if rxChannel ~= "RAID" then return end
 	if rxPrefix ~= addonSyncPrefix then return end
 	
@@ -1599,19 +1611,21 @@ function addon:OnCommReceived(rxPrefix, rxMessage, rxChannel, senderName)
 	if cmd == cmdSyncEvent then
 		local trigger_type, reason_raw, reason_detail = a1, a2, a3
 		
-		-- BAUSTELLE
-		-- if trigger_type and reason_raw and reason_detail then
-			-- self:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, true)
-		-- end
+		if trigger_type and reason_raw and reason_detail then
+			self:SaveTriggerEvent(trigger_type, reason_raw, reason_detail, true)
+			return
+		end
 		
 		
 	-- We have received "VerHello"
 	elseif cmd == cmdVerHello then
 		self:rxVerHello()
+		return
 		
 	-- We have received "VerReply"
 	elseif cmd == cmdVerReply then
 		self:rxVerReply(senderName, a1)
+		return
 		
 	end -- CMD ################################
 end
@@ -1647,7 +1661,60 @@ function addon:rxVerReply(senderName, versionNumber)
 	end
 end
 
+function addon:version_check_0() -- generate sorted table
+	wipe(playerVersionTableSorted)
+	
+	for k,v in pairs(playerVersionTable) do
+		if UnitInRaid(k) then
+			table.insert(playerVersionTableSorted, {name=k, ver=v} )
+		else 	-- remove if player no longer in raid
+			playerVersionTable[k] = nil
+		end
+	end
+	if #playerVersionTableSorted == 0 then return end
+	
+	table.sort(playerVersionTableSorted, 
+		function(a,b)
+			if a.ver==b.ver then
+				return a.name > b.name
+			else
+				return a.ver > b.ver
+			end
+		end
+	) -- sort by version and name
+end
 
+function addon:version_check_1()
+	self:version_check_0() 	-- generate sorted table
+	
+	if #playerVersionTableSorted == 0 then 
+		self:PPrint("|cffFF8080" .. "Version Check:".."|r " .. "No players with the addon detected.")
+		return
+	end
+	
+	self:PPrint("|cffFFFF80" .. "Version Check:".."|r")
+	
+	local targetName, targetVersion, v1,v2,v3
+	for _,entry in pairs(playerVersionTableSorted) do
+		targetName = format("\124Hplayer:%s:0\124h[%s]\124h", entry.name, entry.name)
+		v3 = tostring( entry.ver % 100 )
+		v2 = tostring( floor(entry.ver / 100) % 100 )
+		v1 = tostring( floor(entry.ver / 10000) )
+		targetVersion = "<" .. v1 .. "." .. v2 .. "." .. v3 .. ">"
+		
+		if entry.ver > addonTable.ADDON_VERSION_NUM then
+			-- newer: light blue
+			targetVersion = "|cff8080FF" .. targetVersion .. "|r"
+		elseif entry.ver < addonTable.ADDON_VERSION_NUM then
+			-- older: light red
+			targetVersion = "|cffFF8080" .. targetVersion .. "|r"
+		else
+			-- same: light green
+			targetVersion = "|cff80FF80" .. targetVersion .. "|r"
+		end
+		self:PPrint(targetVersion, targetName)
+	end -- FOR entry playerVersionTableSorted
+end
 
 
 
