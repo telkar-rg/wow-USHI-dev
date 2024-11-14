@@ -35,7 +35,7 @@ local playerVersionTableSorted = {}
 local addonSyncPrefix = "USHI-1-A4836E14"
 local SYNC_COOLDOWN = 60 	-- 1 min cd for received syncs
 
-local cmdSyncEvent = "SYNC_EVENT"
+local cmdSyncEvent = "SYNC_EVENT_2"
 local cmdVerHello  = "VER_HELLO"
 local cmdVerReply  = "VER_REPLY"
 
